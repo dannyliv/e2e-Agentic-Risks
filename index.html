@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Securing the Agentic Enterprise &mdash; An End-to-End View of AI Agent Risk</title>
+<meta name="description" content="An interactive, end-to-end map of how AI agents are deployed in the enterprise and where they get attacked: 31 validated risks across 11 deployment layers, mapped to real-world incidents, solutions, and the gaps that remain. By Danny Livshits.">
+<meta name="author" content="Danny Livshits">
+<meta property="og:title" content="Securing the Agentic Enterprise: An End-to-End View of AI Agent Risk">
+<meta property="og:description" content="31 validated agentic-AI risks across an 11-layer enterprise deployment, each mapped to real incidents, solutions, and honest gap calls. Interactive threat map.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://dannyliv.github.io/e2e-Agentic-Risks/">
+<meta property="og:image" content="https://dannyliv.github.io/e2e-Agentic-Risks/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a0e15'/%3E%3Crect x='8' y='8' width='16' height='16' rx='4' fill='none' stroke='%233ad6cf' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%233ad6cf'/%3E%3C/svg%3E">
+</head>
+<body>
+<div class="bg-field"></div>
+<div class="bg-grid"></div>
+<div class="bg-grain"></div>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top">
+      <span class="glyph"></span>
+      <span><b>Securing the Agentic Enterprise</b><br><span>e2e-agentic-risks</span></span>
+    </a>
+    <nav class="nav-links">
+      <a class="hide-sm" href="#map-sec">Threat map</a>
+      <a class="hide-sm" href="#explorer">Risk taxonomy</a>
+      <a class="hide-sm" href="#mapping">Solutions &amp; gaps</a>
+      <a class="hide-sm" href="#recs">Recommendations</a>
+      <a class="hide-sm" href="#read">Read</a>
+      <a class="nav-cta" href="https://github.com/dannyliv/e2e-Agentic-Risks" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<a id="top"></a>
+<div class="wrap">
+  <section class="hero">
+    <div class="kicker reveal d1">Whitepaper &amp; interactive threat model &middot; 2026</div>
+    <h1 class="reveal d2">Securing the<br><span class="accent">Agentic Enterprise</span></h1>
+    <p class="lede reveal d3">AI agents are not an app bolted onto old infrastructure. They are a new trust topology, where untrusted text, non-human identities, and autonomous action collapse the boundaries classic security kept apart. This is the end-to-end map of where they get attacked, what defends them, and what still has no answer.</p>
+    <div class="by reveal d4">By <b>Danny Livshits</b> &middot; an end-to-end view across the full agentic deployment stack</div>
+    <div class="stat-row reveal d5">
+      <div class="stat"><div class="n cy">31</div><div class="l">canonical risks</div></div>
+      <div class="stat"><div class="n">11</div><div class="l">deployment layers</div></div>
+      <div class="stat"><div class="n">56</div><div class="l">verified real incidents</div></div>
+      <div class="stat"><div class="n">8</div><div class="l">trust boundaries</div></div>
+      <div class="stat"><div class="n" style="color:var(--high)">19</div><div class="l">under-served / open</div></div>
+    </div>
+  </section>
+</div>
+
+<div class="divider"></div>
+
+<div class="wrap">
+  <section id="map-sec">
+    <div class="sec-head">
+      <div class="tag">Figure 1 &middot; the spine</div>
+      <h2>The end-to-end deployment, and where it gets attacked</h2>
+      <p>A single request crosses eleven layers and eight trust boundaries. Click any layer to see the surfaces it exposes, the validated incidents that hit it, the controls that help, and where coverage runs out.</p>
+    </div>
+    <div class="diagram-shell">
+      <div class="diagram-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span>deployment_attack_surface.map</span>
+        <span class="hint">click a layer &middot; <b>highest-severity risk colors each badge</b></span>
+      </div>
+      <div id="mapwrap"><svg id="map" role="img" aria-label="End-to-end enterprise AI agent deployment and attack-surface map"></svg></div>
+      <div class="diagram-legend">
+        <span><i style="background:var(--crit)"></i>Critical layer</span>
+        <span><i style="background:var(--high)"></i>High</span>
+        <span><i style="background:var(--med)"></i>Medium</span>
+        <span><span class="lg-line"></span>request / action flow</span>
+        <span><span class="lg-line d"></span>return / control flow</span>
+        <span style="color:var(--cy)">TBn = trust boundary (hover for detail)</span>
+        <span>badge = count of mapped risks</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section id="explorer">
+    <div class="sec-head">
+      <div class="tag">The taxonomy</div>
+      <h2>Thirty-one risks across eight families</h2>
+      <p>Every risk is mapped to the layers it touches, the OWASP LLM and Agentic threat IDs, a validated real-world example, and an honest call on how well it is solved. Filter, then click a card for the full entry.</p>
+    </div>
+    <div id="filters" class="filters"></div>
+    <div id="grid" class="grid"></div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section id="mapping">
+    <div class="sec-head">
+      <div class="tag">Coverage &amp; honest gaps</div>
+      <h2>Risk to solution, and where it runs out</h2>
+      <p>The analytical core: each risk against its strongest controls and an explicit gap status. Two risks are open problems no product solves; seventeen are under-served by shipping tools.</p>
+    </div>
+    <div class="table-scroll"><table class="map" id="maptable"></table></div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section id="recs">
+    <div class="sec-head">
+      <div class="tag">End-to-end mitigation</div>
+      <h2>Eight moves that contain the consequential half</h2>
+      <p>Most agentic risk is contained, not prevented. These cross-cutting moves neutralize the damaging half of nearly every attack even when detection fails.</p>
+    </div>
+    <div id="recsgrid" class="recs"></div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section id="read">
+    <div class="sec-head">
+      <div class="tag">Read the whitepaper</div>
+      <h2>Two parts, dual register</h2>
+      <p>Part 1 builds the shared map and tours the attack surface. Part 2 catalogs all 31 risks, surveys the solution market, and prescribes an end-to-end control architecture. Each part opens with an executive bottom line and drops into practitioner depth.</p>
+    </div>
+    <div class="dl-row">
+      <a class="dl" href="part-1.html">
+        <span class="ic">PART 01 &middot; READ ONLINE</span>
+        <b>How agents are deployed and where they get attacked</b>
+        <span>The 11-layer reference architecture, the trust-boundary model, and the eight attack families with a validated example each.</span>
+        <span class="arrow">&rarr;</span>
+      </a>
+      <a class="dl" href="part-2.html">
+        <span class="ic">PART 02 &middot; READ ONLINE</span>
+        <b>The taxonomy, the solution landscape, and the gaps</b>
+        <span>All 31 risks, seven solution categories, the full mapping with gap calls, and a reference control architecture.</span>
+        <span class="arrow">&rarr;</span>
+      </a>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div class="brandblock">
+        <a class="brand" href="#top"><span class="glyph"></span><span><b>Securing the Agentic Enterprise</b></span></a>
+        <p style="margin-top:16px">An end-to-end view of AI agent risk across the enterprise deployment stack. Every incident cited is a real, primary-source-verified event. By Danny Livshits.</p>
+        <div class="disclaimer">
+          <p><b>Disclaimer.</b> This site and the accompanying whitepaper are open research published for educational and defensive-security purposes. The author's referenced tools (Agent Guard, a2a-audit) are open-source research instruments, not commercial or enterprise products, and carry no warranty or liability. Vendor and product names are the property of their owners and are referenced for analysis only; their inclusion is not an endorsement. Verify all controls against your own environment before relying on them.</p>
+        </div>
+      </div>
+      <div class="ftlinks">
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--fg-faint);letter-spacing:2px;text-transform:uppercase">Project</span>
+        <a href="https://dannyliv.github.io/e2e-Agentic-Risks/">Live demo</a>
+        <a href="https://github.com/dannyliv/e2e-Agentic-Risks" target="_blank" rel="noopener">Source (MIT)</a>
+        <a href="part-1.html">Whitepaper, Part 1</a>
+        <a href="part-2.html">Whitepaper, Part 2</a>
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--fg-faint);letter-spacing:2px;text-transform:uppercase;margin-top:14px">Author OSS research</span>
+        <a href="https://github.com/dannyliv/a2a-audit" target="_blank" rel="noopener">a2a-audit</a>
+        <a href="https://dannyliv.github.io/a2a-audit/" target="_blank" rel="noopener">a2a-audit demo</a>
+      </div>
+    </div>
+    <div class="legal">MIT License &middot; &copy; 2026 Danny Livshits &middot; built as an open, end-to-end agentic-risk reference.</div>
+  </div>
+</footer>
+
+<div class="drawer-mask" id="mask"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <button class="drawer-close" id="dclose" aria-label="Close">&times;</button>
+    <div class="lid" id="dlid"></div>
+    <h3 id="dname"></h3>
+    <p id="dsum"></p>
+  </div>
+  <div class="drawer-body" id="dbody"></div>
+</aside>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
