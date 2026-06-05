@@ -350,9 +350,9 @@ function buildRecs() {
   const g = $('#recsgrid');
   (DATA.cross_cutting_recommendations || []).forEach((r, i) => {
     const c = el('div', { class: 'rec' });
-    const m = r.match(/^([^.:]{3,64}[:.])\s*(.*)$/);
-    const head = m ? m[1].replace(/[.:]$/, '') : ('Move ' + (i + 1));
-    const bodyTxt = m ? m[2] : r;
+    const ci = r.indexOf(':');
+    const head = (ci > 3 && ci < 112) ? r.slice(0, ci).trim() : ('Move ' + (i + 1));
+    const bodyTxt = (ci > 3 && ci < 112) ? r.slice(ci + 1).trim() : r;
     c.innerHTML = `<div class="num">${String(i + 1).padStart(2, '0')}</div>
       <div style="font-family:var(--font-display);font-weight:700;font-size:18.5px;color:var(--fg);margin-top:8px">${esc(head)}</div>
       <p>${esc(bodyTxt)}</p>`;
