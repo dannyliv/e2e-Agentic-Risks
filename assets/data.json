@@ -6,8 +6,8 @@
     "generated": "2026-06-05",
     "counts": {
       "families": 8,
-      "risks": 31,
-      "examples": 51,
+      "risks": 42,
+      "examples": 62,
       "solutions_categories": 3
     }
   },
@@ -2077,6 +2077,643 @@
       "residual_gap": "The gap is the common default absence of enforced, out-of-band, tamper-resistant logging and policy; if injected content can write to or silence the governance plane every downstream control is blind, and service-identity attribution hides violations. Most agent platforms do not provide an immutable, agent-isolated control plane out of the box.",
       "gap_status": "Under-served",
       "recommended_e2e_mitigation": "Run the governance plane out-of-band at higher trust than the agent (TB7): immutable, tamper-resistant, append-only audit logs the agent cannot write to or silence; attribute every action to the real end-user identity, not a shared service identity (L9); enforce policy/approval gates in this plane, not in the agent's natural-language prompt; aggregate cross-platform agent activity (WitnessAI/Noma/Zenity); operationalize EU AI Act Art.14 / NIST Govern / ISO 42001 traceability as audited controls; detect agent attempts to influence the control plane."
+    },
+    {
+      "id": "R32",
+      "name": "Sensitive-data leakage to the model provider via user/agent input (retention + training inclusion)",
+      "family_id": "F4",
+      "family_name": "Identity, Access & Secrets",
+      "short_def": "Confidential or regulated data is disclosed to a third-party model provider simply by being submitted as a prompt or file, where it may be retained, logged, exposed in a provider breach, or used for training, outside enterprise DLP and control.",
+      "mechanism": "Employees and autonomous agents submit proprietary code, PII, and regulated data into a third-party LLM as ordinary prompts and file uploads. Absent a zero-retention/no-train enterprise agreement, the provider may retain the content, log it to internal stores, expose it through a misconfigured backend, or include it in future training (consumer ChatGPT trains on conversations by default unless the user opts out). The enterprise has no DLP visibility because the bulk of usage flows through unmanaged personal accounts on the provider's own domain. The leak needs no attacker and no injection: the sanctioned input channel is the exfiltration channel.",
+      "severity": "High",
+      "exploitability": "No attacker, exploit, or compromise required; a single paste or upload to a personal-account chatbot is sufficient, and the enterprise typically has zero technical control once the data crosses to the third-party endpoint.",
+      "enterprise_relevance": "This is the most common day-one AI data risk a CISO faces: most employees already paste into GenAI tools and a large fraction of those pastes and uploads carry PII/PCI, mostly through unmanaged accounts the security team cannot see, with Samsung's 2023 ChatGPT ban the canonical precedent.",
+      "layers": [
+        "L1",
+        "L3",
+        "L11"
+      ],
+      "owasp_llm": [
+        "LLM02:2025"
+      ],
+      "owasp_agentic": [
+        "T15"
+      ],
+      "other_mapping": "OWASP NHI / third-party-trust; NIST AI RMF (privacy / data governance); CSA MAESTRO L7; shadow-IT data-exfiltration analog",
+      "primary_examples": [
+        {
+          "title": "Employees regularly paste company secrets into ChatGPT (LayerX Enterprise AI and SaaS Data Security Report 2025)",
+          "url": "https://www.theregister.com/2025/10/07/gen_ai_shadow_it_secrets",
+          "date": "2025-10-07",
+          "agent": "ChatGPT / Claude / Microsoft Copilot (enterprise GenAI usage)"
+        },
+        {
+          "title": "Wiz Research Uncovers Exposed DeepSeek Database Leaking Sensitive Information, Including Chat History",
+          "url": "https://www.wiz.io/blog/wiz-research-uncovers-exposed-deepseek-database-leak",
+          "date": "2025-01-30",
+          "agent": "DeepSeek (provider-side ClickHouse exposure)"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Enterprise LLM gateway with inline DLP / PII redaction on egress (Prompt Security, Lakera, Harmonic, WitnessAI, Cyberhaven)",
+          "type": "gateway",
+          "how_it_helps": "Inspects and redacts PII/PCI/secrets in prompts and uploads before they reach a third-party endpoint, restoring DLP visibility over the sanctioned input channel.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Contractual zero-retention / no-train agreements + private model deployment (Azure OpenAI, Amazon Bedrock)",
+          "type": "architecture pattern",
+          "how_it_helps": "Removes provider-side retention and training inclusion by keeping data inside an enterprise-controlled boundary with contractual no-train guarantees.",
+          "coverage": "Strong"
+        },
+        {
+          "name": "Block unmanaged personal-account GenAI at the network/browser edge + policy barring regulated data from third-party endpoints",
+          "type": "architecture pattern",
+          "how_it_helps": "Cuts off the 82%-of-usage shadow path through personal accounts and enforces data-classification rules that keep regulated classes off external models.",
+          "coverage": "Partial"
+        }
+      ],
+      "residual_gap": "Gateway DLP is probabilistic and bypassable by paraphrase, screenshots, personal devices, or non-corporate networks; once data reaches the provider the enterprise has no recall, and zero-retention contracts cover only sanctioned enterprise tenants, not the dominant unmanaged-account usage. The provider-breach surface (DeepSeek-style open log stores) is entirely outside enterprise control.",
+      "gap_status": "Under-served",
+      "recommended_e2e_mitigation": "Default regulated and proprietary data to a private/in-tenant model with a contractual no-train, zero-retention agreement (L3/L11); route all GenAI traffic through an enterprise gateway that applies inline DLP/PII redaction and logs usage (L1/L10); block unmanaged personal-account GenAI endpoints at the network and browser edge and surface sanctioned alternatives; enforce a data-classification policy that bars regulated classes from third-party endpoints, paired with user training; treat provider retention as a breach surface and prefer providers with audited deletion and no-train posture."
+    },
+    {
+      "id": "R33",
+      "name": "System-prompt and instruction extraction (LLM07:2025)",
+      "family_id": "F1",
+      "family_name": "Injection & Input Manipulation",
+      "short_def": "The model discloses its hidden system prompt, embedded credentials, tool schemas, or guardrail logic, giving an attacker the blueprint to bypass controls or reuse leaked secrets.",
+      "mechanism": "An attacker, operating directly or via indirect injection, coaxes the model to reveal its system/developer instructions through repetition requests ('repeat everything above'), format-confusion, or extraction prompts, with no safety bypass required. The leaked prompt commonly contains embedded secrets, connection strings, tool and function schemas, internal policy, and the exact guardrail wording. The attacker then reuses leaked credentials directly or crafts a precise follow-on jailbreak against the now-known guardrails. This is reconnaissance and secret-disclosure, distinct from a jailbreak whose goal is producing disallowed content.",
+      "severity": "Medium",
+      "exploitability": "Often trivial: benign-looking extraction queries work without any safety bypass, and indirect-injection variants can pull the prompt out of an agent the attacker never directly chats with.",
+      "enterprise_relevance": "Enterprises routinely place credentials, connection strings, and authorization logic in system prompts and treat them as a security control; leakage hands an attacker both the keys and the exact guardrail text to defeat, which is why OWASP elevated it to its own 2025 Top-10 entry.",
+      "layers": [
+        "L2",
+        "L3",
+        "L1"
+      ],
+      "owasp_llm": [
+        "LLM07:2025"
+      ],
+      "owasp_agentic": [
+        "T6"
+      ],
+      "other_mapping": "MITRE ATLAS AML.T0056 (LLM Meta Prompt Extraction); CWE-200 (Information Exposure); CSA MAESTRO L1",
+      "primary_examples": [
+        {
+          "title": "LLM07:2025 System Prompt Leakage (OWASP Gen AI Security Project)",
+          "url": "https://genai.owasp.org/llmrisk/llm072025-system-prompt-leakage/",
+          "date": "2025",
+          "agent": "Production LLM applications (cross-vendor)"
+        },
+        {
+          "title": "CamoLeak: Critical GitHub Copilot Vulnerability Leaks Private Source Code (extraction-then-exploitation chain, CVSS 9.6)",
+          "url": "https://www.legitsecurity.com/blog/camoleak-critical-github-copilot-vulnerability-leaks-private-source-code",
+          "date": "2025-10-08",
+          "agent": "GitHub Copilot Chat"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Treat the system prompt as public: never store secrets or authorization logic in it; enforce authz out-of-band",
+          "type": "architecture pattern",
+          "how_it_helps": "Removes the value of extraction entirely by assuming the prompt leaks, so disclosure yields no usable secrets or bypassable guardrail logic.",
+          "coverage": "Strong"
+        },
+        {
+          "name": "Output filters + canary tokens to detect prompt-disclosure",
+          "type": "runtime guard",
+          "how_it_helps": "Flags responses that echo the system prompt or trip an embedded canary, catching extraction attempts before they reach the attacker.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Provider system-prompt-leak protection (AWS Bedrock Guardrails, provider safety layers)",
+          "type": "model guard",
+          "how_it_helps": "Detects and blocks known extraction patterns at the model boundary, raising the cost of casual disclosure attempts.",
+          "coverage": "Partial"
+        }
+      ],
+      "residual_gap": "Extraction prompts are open-ended and novel phrasings evade output filters and provider guards; canary detection only catches verbatim echoes, not paraphrased disclosure. The only durable fix (no secrets in the prompt) depends on developer discipline that is widely violated, so leaked credentials and guardrail text remain common.",
+      "gap_status": "Partially-addressed",
+      "recommended_e2e_mitigation": "Architect on the assumption the system prompt is public: keep zero secrets, connection strings, or authorization logic in it and enforce authz out-of-band at the tool/identity plane (L9); layer provider system-prompt-leak protection with an independent output filter and embedded canary tokens to detect disclosure (L10); screen indirect-injection channels so an external actor cannot trigger extraction through ingested content (L4); rate-limit and anomaly-flag repeated extraction-style probing from a single principal; rotate any credential that could have appeared in a prompt."
+    },
+    {
+      "id": "R34",
+      "name": "Multimodal injection via image, audio, and voice channels",
+      "family_id": "F1",
+      "family_name": "Injection & Input Manipulation",
+      "short_def": "Hidden instructions embedded in images, audio, or video are decoded and executed by a multimodal/voice agent while remaining imperceptible to humans.",
+      "mechanism": "For vision, instructions are embedded in an image via low-contrast text, LSB steganography, or adversarial pixel perturbation so a vision-language model parses them while a human sees an innocuous picture; the payload triggers when an agent screenshots a page, reads an uploaded image, or processes a scanned document. For audio, a noise pattern optimized below the human hearing threshold (or ultrasonic, DolphinAttack-style) is mixed with speech so the audio encoder transcribes an attacker-chosen instruction instead of the spoken words, surviving room echo and speaker playback. Voice agents and multimodal copilots then execute the decoded instruction. The attack surface (camera/screenshot/microphone), the obfuscation (adversarial perturbation, not Unicode), and the vulnerable component (vision/audio encoder) all differ from text-channel injection.",
+      "severity": "High",
+      "exploitability": "Moderate: requires crafting an adversarial image or audio sample, but published frameworks achieve high success on production multimodal models and the payload is invisible/inaudible to the human in the loop.",
+      "enterprise_relevance": "Enterprise agents increasingly screenshot pages, read uploaded images and scans, and run voice assistants in contact centers, so a poisoned image or an inaudible audio overlay becomes an injection vector that no text sanitizer screens; OWASP LLM01:2025 explicitly added multimodal injection.",
+      "layers": [
+        "L1",
+        "L4",
+        "L3"
+      ],
+      "owasp_llm": [
+        "LLM01:2025"
+      ],
+      "owasp_agentic": [
+        "T6"
+      ],
+      "other_mapping": "MITRE ATLAS AML.T0051 (LLM Prompt Injection, multimodal variant); CSA Research Note: Image Prompt Injection (2026); CSA MAESTRO L2/L7",
+      "primary_examples": [
+        {
+          "title": "Invisible Injections: Exploiting Vision-Language Models Through Steganographic Prompt Embedding",
+          "url": "https://arxiv.org/abs/2507.22304",
+          "date": "2025-07-30",
+          "agent": "Vision-language models (GPT-4V, Claude, LLaVA)"
+        },
+        {
+          "title": "DolphinAttack: Inaudible Voice Commands (foundational audio-channel injection on speech recognition)",
+          "url": "https://arxiv.org/abs/1708.09537",
+          "date": "2017-08-31",
+          "agent": "Voice assistants / audio LLM speech pipelines"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Image re-encoding / JPEG re-compression + OCR-and-screen for embedded text at ingestion",
+          "type": "architecture pattern",
+          "how_it_helps": "Destroys steganographic and adversarial-pixel payloads on re-encode and surfaces hidden text for injection screening before the image reaches the vision encoder.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Dual-LLM / quarantined processing of untrusted media + multimodal injection screening (Model Armor, Lakera multimodal)",
+          "type": "runtime guard",
+          "how_it_helps": "Processes untrusted images/audio in an isolated context whose output is treated as data, and screens decoded content for injection patterns.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Adversarial-audio detection + speech-to-text confidence/consistency checks",
+          "type": "runtime guard",
+          "how_it_helps": "Flags inaudible/ultrasonic perturbations and transcription disagreements that indicate an audio-channel injection before the voice agent acts.",
+          "coverage": "Weak"
+        }
+      ],
+      "residual_gap": "No defense fully neutralizes all variants: re-encoding misses typographic and robust adversarial perturbations, multimodal injection screeners are early-stage and probabilistic, and physical-world audio attacks survive playback. The vision and audio encoders cannot separate instruction from data any better than the text path, so the structural injection flaw persists across modalities.",
+      "gap_status": "Open problem",
+      "recommended_e2e_mitigation": "Treat all media as untrusted input subject to injection screening: re-encode and OCR images at ingestion to break steganographic/adversarial payloads (L4), process untrusted media in a quarantined dual-LLM context whose output is data not instructions, and run a multimodal injection classifier (Model Armor / Lakera) as one ensemble signal (L10); apply adversarial-audio detection and transcription-confidence checks on voice channels; contain blast radius downstream by hard-allowlisting egress and human-gating any action triggered from freshly-ingested media (L6), since detection alone is probabilistic."
+    },
+    {
+      "id": "R35",
+      "name": "Autonomous browser-agent hijack (Operator / Atlas / Comet class)",
+      "family_id": "F2",
+      "family_name": "Tool & Action Abuse",
+      "short_def": "An AI browser agent acting in the user's live authenticated session is hijacked by injected web/URL/screenshot/clipboard content into exfiltrating data or taking unauthorized actions.",
+      "mechanism": "An agentic browser executes tasks on the live web inside the user's authenticated session, able to click, type, navigate, fill forms, and make payments with the user's standing cookies and permissions. Hidden instructions in a visited page, a crafted URL fragment (HashJack), a fake omnibox URL, a screenshot, or clipboard content override the user's instruction and drive the agent to exfiltrate mail/calendar, navigate to attacker sites, download malware, or initiate transactions. The agent acts as the authenticated user across every site the user is logged into at once, so its blast radius dwarfs a scoped-credential tool agent. CSRF can also write durable malicious instructions into the agent's long-term memory (Tainted Memories) for cross-session persistence.",
+      "severity": "Critical",
+      "exploitability": "Low barrier and high payoff: a single poisoned page, URL fragment, or query parameter triggers the hijack with no victim action beyond browsing, and the agent already holds the user's full ambient session authority.",
+      "enterprise_relevance": "Agentic browsers occupy the highest-risk autonomy-plus-access quadrant; OpenAI, Brave, and the UK NCSC publicly state prompt injection against them may never be fully solved, so as employees adopt browser agents carrying corporate SSO sessions, one poisoned page becomes data theft or fraudulent action.",
+      "layers": [
+        "L1",
+        "L6",
+        "L2"
+      ],
+      "owasp_llm": [
+        "LLM01:2025"
+      ],
+      "owasp_agentic": [
+        "T6",
+        "T7"
+      ],
+      "other_mapping": "MITRE ATLAS AML.T0051 (LLM Prompt Injection); CWE-352 (CSRF, memory-poisoning variant); CSA MAESTRO L2/L7",
+      "primary_examples": [
+        {
+          "title": "OpenAI says AI browsers may always be vulnerable to prompt injection attacks",
+          "url": "https://techcrunch.com/2025/12/22/openai-says-ai-browsers-may-always-be-vulnerable-to-prompt-injection-attacks/",
+          "date": "2025-12-22",
+          "agent": "OpenAI ChatGPT Atlas, Perplexity Comet, browser agents"
+        },
+        {
+          "title": "LayerX identifies 'Tainted Memories' CSRF vulnerability in the new ChatGPT Atlas browser",
+          "url": "https://layerxsecurity.com/blog/layerx-identifies-vulnerability-in-new-chatgpt-atlas-browser/",
+          "date": "2025-10-27",
+          "agent": "ChatGPT Atlas (persistent memory poisoning)"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Isolate agent browsing from authenticated sessions (separate profile, no ambient cookies)",
+          "type": "architecture pattern",
+          "how_it_helps": "Strips the standing session authority that makes a hijack consequential, so a poisoned page cannot act as the logged-in user across corporate and personal sites.",
+          "coverage": "Strong"
+        },
+        {
+          "name": "Explicit human confirmation before send/pay/navigate-to-sensitive actions + per-action HITL on high-impact steps",
+          "type": "architecture pattern",
+          "how_it_helps": "Inserts a human gate on the irreversible/high-impact actions a hijacked agent would take, breaking the chain from injection to fraudulent action.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Strip/quarantine page-derived instructions + egress allowlist (Wiz/Brave agentic-browser hardening)",
+          "type": "runtime guard",
+          "how_it_helps": "Refuses to act on omnibox/clipboard/screenshot/page text as instructions and bounds where the agent can navigate or send data.",
+          "coverage": "Partial"
+        }
+      ],
+      "residual_gap": "OpenAI, Brave, and NCSC publicly assess that prompt injection against browsing agents may never be fully solved; instruction-stripping is probabilistic, confirmation prompts suffer approval fatigue, and persistent memory poisoning (Tainted Memories) survives beyond the session even after the page is gone. Session isolation reduces but does not eliminate the value of a hijack for action-taking agents.",
+      "gap_status": "Open problem",
+      "recommended_e2e_mitigation": "Run browser agents in an isolated profile with no ambient corporate cookies or SSO session (L2), so a hijack cannot inherit standing authority; require explicit human confirmation before any send/pay/navigate-to-sensitive step and reserve HITL for irreversible actions (L1); strip and quarantine all page/omnibox/clipboard/screenshot text as data not instructions and hard-allowlist egress destinations (L6); disable or gate persistent-memory writes from web content to defeat Tainted-Memories CSRF; treat the agent as zero-trust and monitor for anomalous navigation, downloads, or transactions."
+    },
+    {
+      "id": "R36",
+      "name": "RAG / Copilot permission-amplification (latent oversharing made instantly discoverable)",
+      "family_id": "F4",
+      "family_name": "Identity, Access & Secrets",
+      "short_def": "An AI assistant operating within a user's own over-broad permissions makes previously-latent overshared sensitive data instantly discoverable across the tenant via natural-language search.",
+      "mechanism": "Enterprise RAG and copilots (M365 Copilot, Glean, Agentforce) honor the invoking user's existing permissions and apply no judgment about appropriateness. Those permissions are chronically over-broad from legacy oversharing (broken inheritance, 'anyone with link', org-wide shares). Before copilots, reaching such files required knowing where to look; the copilot collapses that friction, surfacing sensitive HR, finance, M&A, and IP documents through a single natural-language prompt to any employee who already held latent access. There is no attacker, no injection, no shared or elevated credential, and no privilege delta between user and agent: the harm is pure access-discoverability amplification.",
+      "severity": "High",
+      "exploitability": "No exploit needed: any authorized employee asking a plain-language question can surface overshared sensitive files the access model technically permitted but practical obscurity formerly protected.",
+      "enterprise_relevance": "Data oversharing is a top blocker to copilot rollout: Gartner reports it caused 40% of surveyed IT leaders to delay M365 Copilot 3+ months, and the average tenant has a large share of business-critical data overshared, so the assistant turns latent misconfiguration into instant tenant-wide exposure.",
+      "layers": [
+        "L7",
+        "L9",
+        "L6"
+      ],
+      "owasp_llm": [
+        "LLM02:2025"
+      ],
+      "owasp_agentic": [
+        "T3"
+      ],
+      "other_mapping": "OWASP LLM06:2025 (Excessive Agency, excessive-permissions sub-root); CWE-732/CWE-285 (incorrect/improper authorization); CSA MAESTRO L4",
+      "primary_examples": [
+        {
+          "title": "Mitigate Oversharing to Govern Microsoft 365 Copilot and Agents",
+          "url": "https://techcommunity.microsoft.com/blog/microsoft365copilotblog/mitigate-oversharing-to-govern-microsoft-365-copilot-and-agents/4448744",
+          "date": "2025-09-02",
+          "agent": "Microsoft 365 Copilot / Copilot agents"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Pre-deployment permission remediation (SharePoint Advanced Management, Restricted Content Discovery / RAC policies)",
+          "type": "architecture pattern",
+          "how_it_helps": "Right-sizes legacy over-broad shares and excludes overshared content from copilot discovery before rollout, removing the latent surface the assistant would amplify.",
+          "coverage": "Strong"
+        },
+        {
+          "name": "Data classification + sensitivity labels enforced at retrieval",
+          "type": "architecture pattern",
+          "how_it_helps": "Blocks sensitive-labeled documents from being returned in copilot answers even when the user technically has access, narrowing discoverability to need-to-know.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Knowledge-level / need-to-know authorization layer (Knostic) over retrieval + continuous access reviews",
+          "type": "identity",
+          "how_it_helps": "Adds a need-to-know gate above raw file permissions and continuously prunes over-broad legacy shares feeding the index.",
+          "coverage": "Partial"
+        }
+      ],
+      "residual_gap": "Permission remediation is a large, ongoing program: tenants accumulate new oversharing faster than reviews clean it, sensitivity labeling is incomplete on legacy content, and retrieval-time enforcement only covers labeled or governed stores. The copilot keeps honoring whatever access remains, so any un-remediated overshare is one prompt from exposure.",
+      "gap_status": "Under-served",
+      "recommended_e2e_mitigation": "Remediate before you deploy: right-size legacy shares and apply Restricted Content Discovery so overshared content is excluded from the copilot index (L9), and stand up continuous access reviews to keep new oversharing from accumulating; enforce data classification and sensitivity labels at retrieval so sensitive documents are withheld even within a user's technical access (L7); add a need-to-know authorization layer (Knostic-class) above file permissions; monitor copilot query/answer logs for anomalous sensitive-document surfacing and treat oversharing as a standing program, not a one-time cleanup."
+    },
+    {
+      "id": "R37",
+      "name": "Hallucination-driven wrong action / confident misinformation feeding automated decisions (LLM09:2025)",
+      "family_id": "F6",
+      "family_name": "Model-Level Safety",
+      "short_def": "A confidently-wrong model output (hallucinated fact, citation, or tool argument) is trusted and acted upon, cascading into incorrect automated actions or flawed human decisions.",
+      "mechanism": "Models are trained and evaluated in ways that reward confident guessing over admitting uncertainty, so they emit fabricated facts, citations, or tool arguments with high apparent confidence. An agent acts on its own hallucinated premise (wrong record, wrong API parameter, misinterpreted tool output), and because agents open tickets, change data, send emails, and route workflows, a hallucinated fact at step N becomes unquestioned input at step N+1 and cascades through many automated actions before a human notices (cascading hallucination). The root is the model's own content-quality failure, not over-empowerment: the risk fires even when permissions are least-privilege and oversight is in place, as long as a confidently-wrong output is trusted.",
+      "severity": "High",
+      "exploitability": "No attacker required; the failure is intrinsic to the model and surfaces whenever an agent or human trusts a plausible-but-wrong output, which evaluations show is the likelier outcome than a correct answer on hard questions for most models.",
+      "enterprise_relevance": "Agents that act on their own hallucinated premises drive real financial, legal, and operational losses: a large share of enterprise AI users admit making a major business decision on hallucinated content, and the failure is benign-looking, making it distinct from and harder to gate than the destructive-autonomy framing of R08.",
+      "layers": [
+        "L3",
+        "L2",
+        "L6"
+      ],
+      "owasp_llm": [
+        "LLM09:2025"
+      ],
+      "owasp_agentic": [
+        "T5"
+      ],
+      "other_mapping": "NIST AI RMF (validity / reliability); MITRE ATLAS (model integrity / erosion of trust); CSA MAESTRO L1",
+      "primary_examples": [
+        {
+          "title": "LLM09:2025 Misinformation (OWASP Gen AI Security Project)",
+          "url": "https://genai.owasp.org/llmrisk/llm092025-misinformation/",
+          "date": "2025-01-01",
+          "agent": "Autonomous LLM agents (cross-vendor)"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Ground outputs in retrieval with mandatory citation and verification before action",
+          "type": "architecture pattern",
+          "how_it_helps": "Forces claims and tool arguments to trace to a retrieved source and be checked before an action fires, cutting fabricated premises at the root.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Cross-check critical facts/tool arguments against authoritative systems of record + schema/business-rule validation",
+          "type": "runtime guard",
+          "how_it_helps": "Validates record IDs, parameters, and key facts against the system of record before they drive a downstream action, catching wrong-but-plausible inputs.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Confidence/uncertainty calibration + abstention with human review on low-confidence high-impact actions + reversible-only actions",
+          "type": "architecture pattern",
+          "how_it_helps": "Routes uncertain high-impact steps to a human and constrains the agent to reversible operations so a hallucinated premise does not cascade irreversibly.",
+          "coverage": "Weak"
+        }
+      ],
+      "residual_gap": "Hallucination is intrinsic and unsolved: grounding reduces but does not eliminate fabrication, calibration/abstention is immature and models remain over-confident, and verification only covers facts checkable against a system of record. In multi-step agentic workflows a single un-caught wrong premise still cascades before any human reviews it.",
+      "gap_status": "Under-served",
+      "recommended_e2e_mitigation": "Assume outputs can be confidently wrong: ground generation in retrieval with mandatory citations and verify claims and tool arguments against authoritative systems of record before any action fires (L3/L6); validate tool arguments against schemas and business rules, and constrain agents to reversible operations with snapshots/soft-delete; require human review on low-confidence or high-impact steps and detect cascade points where a model claim becomes the next step's input (L2); log provenance of every acted-upon fact so a wrong premise can be traced and rolled back."
+    },
+    {
+      "id": "R38",
+      "name": "Secrets and PII leakage into agent logs, traces, and observability pipelines",
+      "family_id": "F4",
+      "family_name": "Identity, Access & Secrets",
+      "short_def": "Live secrets and PII are captured in agent prompt/trace/observability logs (and MCP configs) and then exposed via leaked commits, open log stores, or over-permissioned tracing backends.",
+      "mechanism": "Agent frameworks log full prompts, tool inputs/outputs, and reasoning traces to observability platforms for debugging. These traces routinely capture secrets pasted by users, API keys passed as plaintext tool arguments, process-argument lists visible to co-resident processes, stdout fed straight into the LLM context, and credentials stored in MCP config files. The telemetry is then exposed through misconfigured or open log databases, public repo commits of config/env files (AI-assisted commits leak at roughly double the baseline rate), or over-broad access to the tracing backend, disclosing live credentials and PII to anyone who reaches the log plane. This is the telemetry-capture surface, distinct from R17's local token store and the inverse of R31's audit-trail absence.",
+      "severity": "High",
+      "exploitability": "Passive: the attacker reads logs, commits, or an exposed trace store rather than exploiting the agent, and a large fraction of agent-skill secret leaks surface through ordinary stdout/print captured into traces.",
+      "enterprise_relevance": "Logs and traces are an under-recognized credential-exfil surface entirely separate from local token stores: tens of millions of secrets leak via public commits yearly, tens of thousands sit in MCP config files, and provider-side exposures have placed plaintext chat logs and API keys in open databases.",
+      "layers": [
+        "L10",
+        "L9",
+        "L5"
+      ],
+      "owasp_llm": [
+        "LLM02:2025"
+      ],
+      "owasp_agentic": [
+        "T9"
+      ],
+      "other_mapping": "OWASP NHI Top 10 (NHI2 Secret Leakage); CWE-532 (Insertion of Sensitive Information into Log File); CSA MAESTRO L5",
+      "primary_examples": [
+        {
+          "title": "29 million leaked secrets in 2025: Why AI agents credentials are out of control (GitGuardian State of Secrets Sprawl 2026)",
+          "url": "https://www.helpnetsecurity.com/2026/04/14/gitguardian-ai-agents-credentials-leak/",
+          "date": "2026-04-14",
+          "agent": "AI agent frameworks, MCP servers, LLM observability platforms"
+        },
+        {
+          "title": "Credential Leakage in LLM Agent Skills: A Large-Scale Empirical Study (73.5% surface via stdout/print into the LLM context)",
+          "url": "https://arxiv.org/abs/2604.03070",
+          "date": "2026-04-03",
+          "agent": "LLM agent skills / framework runtimes"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Secret/PII redaction in the logging/tracing pipeline before persistence (LLM-aware DLP on traces)",
+          "type": "runtime guard",
+          "how_it_helps": "Strips secrets and PII from prompts, tool I/O, and reasoning traces before they are written, so the telemetry plane never persists live credentials.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Never pass secrets as plaintext tool arguments; inject from a vault at call time",
+          "type": "architecture pattern",
+          "how_it_helps": "Keeps credentials out of the trace and process-argument surface entirely by resolving them from a vault only at the moment of the tool call.",
+          "coverage": "Strong"
+        },
+        {
+          "name": "Least-privilege, encrypted observability/trace backends + pre-commit and MCP-config secret scanning in CI (GitGuardian)",
+          "type": "scanner",
+          "how_it_helps": "Locks down who can read traces and catches secrets in commits and MCP config files before they reach a public or over-shared store.",
+          "coverage": "Partial"
+        }
+      ],
+      "residual_gap": "Redaction is pattern-based and misses novel or structured secrets and free-text PII; stdout-to-context capture is a framework default that developers rarely disable, and observability backends are frequently over-permissioned or third-party. Once a secret lands in a trace or a public commit it must be rotated, and detection of exposure is often slow.",
+      "gap_status": "Under-served",
+      "recommended_e2e_mitigation": "Keep secrets out of the telemetry plane by design: resolve credentials from a vault at call time and never pass them as plaintext tool arguments or print them to stdout that feeds the context (L5/L9); apply LLM-aware secret/PII redaction in the tracing pipeline before persistence and encrypt log stores (L10); least-privilege the observability and trace backends and treat third-party tracing platforms as a data-egress surface; run pre-commit and MCP-config secret scanning in CI; rotate any credential that could have entered a log and alert on exposed trace stores."
+    },
+    {
+      "id": "R39",
+      "name": "Insecure agent-to-human output rendering: XSS-to-RCE in the rendering surface",
+      "family_id": "F8",
+      "family_name": "Output, Resource & Governance",
+      "short_def": "Unsanitized model output rendered in an agent's desktop/web UI (HTML, Mermaid, ECharts) executes as client-side script (XSS), escalating to RCE on the host via exposed Electron IPC.",
+      "mechanism": "Agent UIs render model output as rich content: markdown-to-HTML, Mermaid diagrams, ECharts, KaTeX. When the renderer inserts model-generated HTML into the DOM without DOMPurify or a strict CSP, attacker- or injection-controlled output executes as JavaScript in the client (stored or streaming XSS). In Electron-based desktop agents that also expose privileged ipcRenderer to the renderer process, the XSS escalates to arbitrary command execution on the host, reaching stored conversations, API keys, local files, and integrated tooling. The sink is the client rendering layer itself, a third distinct sink from R28's exfil-URL and R29's server-side interpreter; because the output can be driven by indirect injection, poisoning a page or repo can pop the developer's workstation through the agent's own UI.",
+      "severity": "Critical",
+      "exploitability": "High where present: a single crafted Mermaid/ECharts/HTML block in a model response triggers code execution, and the response can be steered by indirect injection so no direct attacker access to the victim is needed.",
+      "enterprise_relevance": "This is a recurring class across AI coding and chat agents shipped as Electron apps with rich renderers (DeepChat CVE-2025-67744 is CVSS 9.6 RCE, with OpenCode and tuui confirming the pattern), so a poisoned page or repo can compromise a developer workstation through the agent's UI.",
+      "layers": [
+        "L6",
+        "L2",
+        "L10"
+      ],
+      "owasp_llm": [
+        "LLM05:2025"
+      ],
+      "owasp_agentic": [
+        "T11"
+      ],
+      "other_mapping": "CWE-79 (XSS) chained to CWE-94 (Code Injection); MITRE ATLAS (output-handling abuse); CSA MAESTRO L6/L7",
+      "primary_examples": [
+        {
+          "title": "CVE-2025-67744: DeepChat Remote Code Execution via Mermaid XSS and Exposed Electron IPC (CVSS 9.6)",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-67744",
+          "date": "2025-12-15",
+          "agent": "DeepChat (open-source desktop AI agent, Electron)"
+        },
+        {
+          "title": "CVE-2026-22813: OpenCode AI coding agent markdown renderer XSS-to-command-execution",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-22813",
+          "date": "2026-01-12",
+          "agent": "OpenCode (AI coding agent)"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Sanitize all model output before DOM insertion (DOMPurify) + strict CSP in the agent UI",
+          "type": "architecture pattern",
+          "how_it_helps": "Neutralizes XSS at the rendering boundary by stripping active content and forbidding inline/eval execution, the durable fix across DeepChat/OpenCode/tuui.",
+          "coverage": "Strong"
+        },
+        {
+          "name": "Electron hardening: contextIsolation on, no nodeIntegration in renderer, minimal IPC surface",
+          "type": "architecture pattern",
+          "how_it_helps": "Breaks the XSS-to-RCE escalation path so even a successful client-side script cannot reach host command execution.",
+          "coverage": "Strong"
+        },
+        {
+          "name": "Disable or sandbox dynamic renderers (Mermaid, ECharts) or render them in isolated frames",
+          "type": "architecture pattern",
+          "how_it_helps": "Removes the rich-renderer code-execution sink that unsanitized model output abuses, or confines it where it cannot touch the privileged renderer.",
+          "coverage": "Partial"
+        }
+      ],
+      "residual_gap": "Sanitization and renderer hardening depend on each agent vendor getting client-side security right, and the recurring CVE stream shows many ship unsafe defaults (unsafe-eval CSP, exposed IPC, raw HTML). Because the triggering output can be driven by injection upstream, any single unsanitized rich-render block reintroduces the full XSS-to-RCE chain on the user's host.",
+      "gap_status": "Partially-addressed",
+      "recommended_e2e_mitigation": "Treat model output as untrusted in the client: sanitize all output with DOMPurify and enforce a strict CSP before any DOM insertion, never rendering raw HTML (L6); harden Electron with contextIsolation on, nodeIntegration off, and a minimal IPC surface so XSS cannot escalate to host RCE (L2); disable or sandbox dynamic renderers like Mermaid and ECharts in isolated frames; pin and vet agent-client versions against this CVE class and pair with upstream injection defenses, since the malicious output can be injection-driven."
+    },
+    {
+      "id": "R40",
+      "name": "Model extraction / distillation and IP theft via API querying",
+      "family_id": "F6",
+      "family_name": "Model-Level Safety",
+      "short_def": "An attacker systematically queries a proprietary model/agent via its API to distill and clone its capabilities and reasoning into a competing model, stealing the model IP.",
+      "mechanism": "An adversary treats the victim's deployed model or agent as a teacher, issuing large volumes of crafted prompts and harvesting input-output pairs (and, where exposed, internal reasoning traces) to train a smaller student model that replicates the proprietary capability, domain knowledge, or fine-tuned behavior. Because LLMs are offered as services, legitimate API access alone suffices and no weight theft is needed. This defeats the IP moat and can reconstruct sensitive training-data-derived behavior. The target (the model's behavior/weights as IP) and the mechanism (legitimate high-volume queries used for distillation) differ from embedding inversion (R12, recovering source text) and inherited backdoors (R23, a supply-chain integrity attack on consumed weights).",
+      "severity": "Medium",
+      "exploitability": "Requires high query volume and resources to distill effectively, but uses only legitimate API access with no exploit, making it hard to distinguish from heavy normal usage.",
+      "enterprise_relevance": "For any enterprise that exposes a fine-tuned or proprietary model/agent as a product, extraction is a direct revenue and IP threat: Google's threat-intelligence group publicly detected and disrupted a 100,000+ prompt campaign coercing Gemini's reasoning traces to clone its capability.",
+      "layers": [
+        "L3",
+        "L11",
+        "L10"
+      ],
+      "owasp_llm": [
+        "LLM10:2025"
+      ],
+      "owasp_agentic": [
+        "T4"
+      ],
+      "other_mapping": "MITRE ATLAS AML.T0048 (ML Model Extraction); NIST AI RMF (IP / confidentiality); CSA MAESTRO L1",
+      "primary_examples": [
+        {
+          "title": "GTIG AI Threat Tracker: Distillation, Experimentation, and (Continued) Integration of AI for Adversarial Use",
+          "url": "https://cloud.google.com/blog/topics/threat-intelligence/distillation-experimentation-integration-ai-adversarial-use",
+          "date": "2026-02-12",
+          "agent": "Google Gemini (GTIG-detected reasoning-trace extraction)"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Per-principal rate limiting + anomaly detection on query patterns indicative of distillation",
+          "type": "runtime guard",
+          "how_it_helps": "Caps harvesting volume and flags systematic teacher-querying patterns (high-volume, diverse, reasoning-eliciting) before a usable student dataset is collected.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Do not expose internal reasoning traces to API consumers; output perturbation / response watermarking",
+          "type": "architecture pattern",
+          "how_it_helps": "Removes the highest-value distillation signal (chain-of-thought) and degrades/marks responses so a cloned student is weaker and attributable.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "ToS enforcement + behavioral monitoring + extraction incident response (as Google/GTIG did)",
+          "type": "framework",
+          "how_it_helps": "Detects, disables, and acts on extraction campaigns operationally, the only demonstrated real-world disruption to date.",
+          "coverage": "Weak"
+        }
+      ],
+      "residual_gap": "Extraction uses legitimate API calls, so detection is heuristic and distributed/low-and-slow campaigns evade rate and anomaly thresholds; watermarking and perturbation trade off response quality, and withholding reasoning traces conflicts with product transparency. No control fully prevents a determined, well-resourced distiller from approximating the model.",
+      "gap_status": "Under-served",
+      "recommended_e2e_mitigation": "Defend the model as an IP asset: rate-limit per authenticated principal and run anomaly detection tuned to distillation patterns (high-volume, broad-coverage, reasoning-eliciting queries) with auto-throttle (L3/L10); do not expose internal reasoning traces to API consumers and apply response watermarking/perturbation to weaken and attribute clones; enforce Terms of Service with behavioral monitoring and a tested extraction incident-response playbook to detect, disable, and disrupt campaigns; require strong principal authentication so volume is attributable."
+    },
+    {
+      "id": "R41",
+      "name": "Shadow AI and unsanctioned agent sprawl (ungoverned agent inventory)",
+      "family_id": "F4",
+      "family_name": "Identity, Access & Secrets",
+      "short_def": "Unsanctioned, un-inventoried AI tools and self-built agents proliferate outside IT visibility, creating an ungoverned fleet of agents and non-human identities that cannot be secured because they are unknown.",
+      "mechanism": "Without a sanctioned-AI catalog and discovery tooling, employees adopt unapproved GenAI tools, build agents in low-code platforms, and grant third-party AI apps OAuth access to corporate SaaS, none of it inventoried. Each ungoverned agent carries its own non-human identity, data access, and attack surface, but security has no visibility to apply least-privilege, monitoring, or offboarding. A breach of any unknown agent is undetected and unattributable. This is the meta-governance precondition: both R14 (NHI token theft) and R31 (audit-trail gaps) presume a known, governed agent for which a token could be stolen or a log could be missing, whereas shadow AI is the absence of any discovery at all.",
+      "severity": "High",
+      "exploitability": "Not an exploit but a standing exposure: any unknown agent or OAuth grant is unmanaged by default, and an attacker who finds one operates against a target security never knew existed.",
+      "enterprise_relevance": "Nearly all organizations report unsanctioned AI use and a meaningful share have already been breached through it, while projected agent counts grow into the hundreds of thousands per large enterprise, so discovery and inventory are the prerequisite control that makes the entire risk program enforceable.",
+      "layers": [
+        "L9",
+        "L10",
+        "L2"
+      ],
+      "owasp_llm": [
+        "LLM02:2025"
+      ],
+      "owasp_agentic": [
+        "T3"
+      ],
+      "other_mapping": "OWASP NHI Top 10 (NHI inventory / governance); NIST AI RMF (Govern / Map); CSA MAESTRO L5; shadow-IT discovery analog",
+      "primary_examples": [
+        {
+          "title": "2025 State of Shadow AI Report (Reco): 91% of enterprise AI tools operate without IT oversight",
+          "url": "https://www.reco.ai/state-of-shadow-ai-report",
+          "date": "2025-09-10",
+          "agent": "Unsanctioned enterprise GenAI tools and low-code agents"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Continuous shadow-AI and agent discovery (Zenity, Reco, Harmonic, WitnessAI, Prompt Security)",
+          "type": "scanner",
+          "how_it_helps": "Builds and maintains a live inventory of AI tools, low-code agents, and their non-human identities so security can govern what it can now see.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "OAuth-grant discovery and governance for third-party AI apps + network/browser-edge detection of unapproved GenAI endpoints",
+          "type": "identity",
+          "how_it_helps": "Surfaces and controls the OAuth grants and network paths through which shadow AI reaches corporate SaaS, closing the silent-access route.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Sanctioned-AI catalog + approval workflow + NHI inventory (OWASP NHI Top 10)",
+          "type": "framework",
+          "how_it_helps": "Provides a governed path so employees adopt approved, inventoried tools instead of ungoverned ones, and ties every agent to a tracked identity lifecycle.",
+          "coverage": "Partial"
+        }
+      ],
+      "residual_gap": "Discovery is never complete: new tools, low-code agents, and personal-account usage appear continuously, OAuth grants and edge-blocking are evadable, and shadow tools persist undetected for long periods. Inventory reduces the unknown surface but cannot guarantee zero ungoverned agents, so the precondition risk is structurally unsolvable, only manageable.",
+      "gap_status": "Under-served",
+      "recommended_e2e_mitigation": "Treat discovery as the program's foundation: run continuous shadow-AI and agent discovery to build a live inventory of tools, low-code agents, and their NHIs (L10), and govern third-party OAuth grants into corporate SaaS (L9); offer a sanctioned-AI catalog with a fast approval workflow so employees have a governed path, backed by an NHI inventory under the OWASP NHI Top 10; detect and gate unapproved GenAI endpoints at the network and browser edge (L2); make inventory a recurring control with anomaly alerting on newly-appearing agents and identities."
+    },
+    {
+      "id": "R42",
+      "name": "Cross-jurisdiction data-residency and AI-sovereignty exposure from autonomous tool/inference routing",
+      "family_id": "F8",
+      "family_name": "Output, Resource & Governance",
+      "short_def": "Autonomous agents route tool calls and inference across jurisdictions at runtime, moving regulated data over borders without a predetermined auditable flow, breaching data-residency/sovereignty law.",
+      "mechanism": "Given a task, an agent autonomously selects and calls third-party tools and model endpoints whose processing locations span multiple countries, moving (even ephemerally) personal or regulated data across borders at runtime in milliseconds. Legal frameworks such as GDPR Chapter 5 assume static, predetermined transfer mechanisms (SCCs, DPAs, transfer risk assessments) and unified control; the agent's runtime, autonomous, cross-jurisdictional invocations violate that assumption, and even millisecond-transient inference data can fall under sovereignty rules. The exposure is regulatory and compliance-driven, arising from dynamic data movement rather than a technical exploit.",
+      "severity": "Medium",
+      "exploitability": "No attacker: the exposure is created by the agent's own legitimate runtime routing decisions, surfacing as a compliance/regulatory breach rather than a security incident.",
+      "enterprise_relevance": "For regulated EU, healthcare, and finance deployments this is a live compliance exposure: the EU AI Act (full enforcement 2026) defines no agentic system and does not address autonomous cross-border tool use, leaving dynamic runtime data movement outside the static conformity-assessment model.",
+      "layers": [
+        "L6",
+        "L9",
+        "L10"
+      ],
+      "owasp_llm": [
+        "LLM02:2025"
+      ],
+      "owasp_agentic": [
+        "T3"
+      ],
+      "other_mapping": "EU AI Act / GDPR Chapter 5 (cross-border transfers); NIST AI RMF (Govern / data governance); CSA MAESTRO L5/L7",
+      "primary_examples": [
+        {
+          "title": "Sovereignty at Risk: AI Agents' Cross-border Tool Calls Shatter Traditional Regulatory Boundaries",
+          "url": "https://eu.36kr.com/en/p/3569745229699465",
+          "date": "2025-11-26",
+          "agent": "Autonomous tool-calling agents (cross-jurisdiction)"
+        },
+        {
+          "title": "Engineering GDPR compliance in the age of agentic AI (IAPP, Prof. Keivan Navaie)",
+          "url": "https://iapp.org/news/a/engineering-gdpr-compliance-in-the-age-of-agentic-ai",
+          "date": "2025-10-08",
+          "agent": "Agentic AI under GDPR cross-border transfer rules"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Region-pinned tool/model routing + egress allowlists enforcing data-residency policy",
+          "type": "architecture pattern",
+          "how_it_helps": "Constrains the agent to in-region tools and endpoints so regulated data cannot leave its jurisdiction during runtime routing.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Data-flow mapping + per-tool jurisdiction labeling before invocation; policy engine that blocks cross-border calls for classified data",
+          "type": "architecture pattern",
+          "how_it_helps": "Makes each tool's processing jurisdiction explicit and lets a policy gate block cross-border invocations for regulated data classes before the call is made.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Sovereign / in-region model deployment for regulated data classes",
+          "type": "architecture pattern",
+          "how_it_helps": "Keeps inference for regulated data inside a sovereign boundary, removing the cross-border transfer at its source.",
+          "coverage": "Strong"
+        }
+      ],
+      "residual_gap": "Region-pinning depends on accurate, current jurisdiction labels for every third-party tool and model, which are often opaque or change, and a single un-labeled or mis-routed dependency reintroduces the transfer. Regulators have not yet defined how transient agentic data movement maps to existing transfer law, so compliance posture is uncertain and there is no validated named breach to anchor on.",
+      "gap_status": "Under-served",
+      "recommended_e2e_mitigation": "Make data residency an enforced routing constraint, not an assumption: map data flows and label every tool and model endpoint by processing jurisdiction, then gate invocations with a policy engine that blocks cross-border calls for classified data (L6/L10); region-pin tool and model routing behind egress allowlists; deploy sovereign/in-region models for regulated data classes (L9); log every cross-jurisdiction invocation for auditability and align the program with GDPR Chapter 5 and emerging EU AI Act guidance, treating sovereignty as a governance control above the agent."
     }
   ],
   "architecture": {

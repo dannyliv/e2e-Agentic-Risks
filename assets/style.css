@@ -305,6 +305,22 @@ footer .ftlinks { display:flex; flex-direction:column; gap:8px; font-family: var
 footer .ftlinks a { color: var(--fg-mute); } footer .ftlinks a:hover{ color: var(--cy); }
 .legal { margin-top: 38px; font-family: var(--font-mono); font-size: 12px; color: var(--fg-faint); }
 
+/* search + sort + incident index + about */
+#searchsort { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:18px; }
+#search, #incsearch { flex:1; min-width:240px; font-family: var(--font-ui); font-size:14px; color: var(--fg); background: rgba(255,255,255,.03); border:1px solid var(--line-2); border-radius:10px; padding:10px 14px; outline:none; transition: border-color .15s; }
+#search:focus, #incsearch:focus { border-color: var(--cy); box-shadow: 0 0 0 3px var(--cy-glow); }
+#search::placeholder, #incsearch::placeholder { color: var(--fg-faint); }
+.sortlbl { font-family: var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:1px; color: var(--fg-faint); display:flex; align-items:center; gap:8px; }
+#sort { font-family: var(--font-ui); font-size:13px; color: var(--fg); background: var(--ink-700); border:1px solid var(--line-2); border-radius:8px; padding:7px 10px; cursor:pointer; }
+.resultcount { font-family: var(--font-mono); font-size:11px; color: var(--fg-faint); white-space:nowrap; }
+#incsearchwrap { display:flex; align-items:center; gap:14px; margin-bottom:18px; }
+table.map td.rname a { color: var(--cy); }
+.about-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(330px,1fr)); gap:16px; }
+.about-card { border:1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; background: linear-gradient(165deg, rgba(17,25,39,.9), rgba(8,13,22,.88)); }
+.about-card h3 { font-family: var(--font-mono); font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color: var(--cy); margin:0 0 10px; }
+.about-card p { font-family: var(--font-ui); font-size:14.5px; color: var(--fg-soft); line-height:1.6; margin:0; }
+.about-card .mono, span.mono { font-family: var(--font-mono); font-size:12.5px; color: var(--fg-mute); word-break: break-all; }
+
 /* mobile stacked diagram */
 #mapmobile { padding: 14px 14px 18px; }
 .mgroup-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--cy); margin: 20px 0 10px; }

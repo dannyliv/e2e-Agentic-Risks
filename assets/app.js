@@ -291,6 +291,24 @@ function riskAccordion(r) {
 
 /* ---------------- explorer ---------------- */
 let FILT = { family: 'all', severity: 'all', gap: 'all' };
+let SEARCH = '', SORT = 'severity';
+function normUrl(u) { return (u || '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').slice(0, 80); }
+function uniqueIncidents() {
+  const seen = new Map();
+  DATA.risks.forEach(r => (r.primary_examples || []).forEach(ex => {
+    const k = normUrl(ex.url || ex.title); if (k && !seen.has(k)) seen.set(k, ex);
+  }));
+  return [...seen.values()];
+}
+function sortRisks(rs, key) {
+  const a = rs.slice();
+  const num = (x, y) => x.id.localeCompare(y.id, undefined, { numeric: true });
+  if (key === 'severity') a.sort((x, y) => (sev_rank[y.severity] - sev_rank[x.severity]) || num(x, y));
+  else if (key === 'id') a.sort(num);
+  else if (key === 'family') a.sort((x, y) => x.family_id.localeCompare(y.family_id) || num(x, y));
+  else if (key === 'gap') { const o = { Open: 0, Under: 1, Partially: 2, Well: 3 }; a.sort((x, y) => (o[gapKey(x.gap_status)] - o[gapKey(y.gap_status)]) || (sev_rank[y.severity] - sev_rank[x.severity])); }
+  return a;
+}
 function buildExplorer() {
   const fbar = $('#filters');
   const fams = [['all', 'All families']].concat(DATA.families.map(f => [f.id, f.name.replace(/ &.*/, '')]));
@@ -300,6 +318,8 @@ function buildExplorer() {
   fbar.appendChild(el('span', { style: 'flex-basis:100%;height:0' }));
   fbar.appendChild(groupFilters('severity', sevs, 'Severity'));
   fbar.appendChild(groupFilters('gap', gaps, 'Coverage'));
+  const si = $('#search'); if (si) si.addEventListener('input', e => { SEARCH = e.target.value; renderGrid(); });
+  const so = $('#sort'); if (so) so.addEventListener('change', e => { SORT = e.target.value; renderGrid(); });
   renderGrid();
 }
 function groupFilters(key, opts, label) {
@@ -314,11 +334,15 @@ function groupFilters(key, opts, label) {
 }
 function renderGrid() {
   const grid = $('#grid'); grid.innerHTML = '';
-  const rs = DATA.risks.filter(r =>
+  const q = SEARCH.trim().toLowerCase();
+  let rs = DATA.risks.filter(r =>
     (FILT.family === 'all' || r.family_id === FILT.family) &&
     (FILT.severity === 'all' || r.severity === FILT.severity) &&
-    (FILT.gap === 'all' || gapKey(r.gap_status) === FILT.gap));
-  if (!rs.length) { grid.appendChild(el('p', { style: 'color:var(--fg-mute)' }, 'No risks match these filters.')); return; }
+    (FILT.gap === 'all' || gapKey(r.gap_status) === FILT.gap) &&
+    (!q || (r.id + ' ' + r.name + ' ' + r.short_def + ' ' + (r.mechanism || '') + ' ' + (r.family_name || '') + ' ' + (r.layers || []).join(' ') + ' ' + (r.primary_examples || []).map(e => e.title).join(' ')).toLowerCase().includes(q)));
+  rs = sortRisks(rs, SORT);
+  const rc = $('#resultcount'); if (rc) rc.textContent = rs.length + ' of ' + DATA.risks.length + ' risks';
+  if (!rs.length) { grid.appendChild(el('p', { style: 'color:var(--fg-mute)' }, 'No risks match. Try clearing a filter or the search.')); return; }
   rs.forEach(r => {
     const c = el('div', { class: 'card' });
     c.appendChild(el('span', { class: 'stripe', style: `background:${SEVC[r.severity]};color:${SEVC[r.severity]}` }));
@@ -373,6 +397,41 @@ function buildRecs() {
   });
 }
 
+/* ---------------- incident index ---------------- */
+function buildIncidentIndex() {
+  const t = $('#inctable'); if (!t) return;
+  const incs = uniqueIncidents();
+  const byUrl = {};
+  DATA.risks.forEach(r => (r.primary_examples || []).forEach(ex => { const k = normUrl(ex.url || ex.title); (byUrl[k] = byUrl[k] || new Set()).add(r.id); }));
+  incs.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  t.innerHTML = `<thead><tr><th>Incident</th><th>Agent / product</th><th>Date</th><th>Demonstrates</th></tr></thead>`;
+  const tb = el('tbody');
+  incs.forEach(ex => {
+    const rids = [...(byUrl[normUrl(ex.url || ex.title)] || [])].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    const tr = el('tr');
+    tr.innerHTML = `<td class="rname"><a href="${encodeURI(ex.url || '#')}" target="_blank" rel="noopener">${esc(ex.title)}</a></td>
+      <td style="font-size:12.5px;color:var(--fg-soft)">${esc(ex.agent || '')}</td>
+      <td class="rid">${esc(ex.date || '')}</td>
+      <td class="rid" style="font-size:11px">${rids.join(' ')}</td>`;
+    tr.dataset.s = ((ex.title || '') + ' ' + (ex.agent || '') + ' ' + (ex.date || '') + ' ' + rids.join(' ')).toLowerCase();
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+  const cnt = $('#inccount'); if (cnt) cnt.textContent = incs.length + ' verified incidents';
+  const si = $('#incsearch');
+  if (si) si.addEventListener('input', e => {
+    const q = e.target.value.trim().toLowerCase(); let n = 0;
+    tb.querySelectorAll('tr').forEach(r => { const m = !q || r.dataset.s.includes(q); r.style.display = m ? '' : 'none'; if (m) n++; });
+    if (cnt) cnt.textContent = (q ? n + ' of ' + incs.length : incs.length) + ' verified incidents';
+  });
+}
+function setHeroStats() {
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  set('st-risks', DATA.risks.length);
+  set('st-incidents', uniqueIncidents().length);
+  set('st-gaps', DATA.risks.filter(r => ['Open', 'Under'].includes(gapKey(r.gap_status))).length);
+}
+
 /* ---------------- effects ---------------- */
 function attachGlow(node) {
   node.addEventListener('pointermove', e => {
@@ -406,7 +465,8 @@ fetch('assets/data.json').then(r => r.json()).then(d => {
   RISK_BY_ID = {}; d.risks.forEach(r => RISK_BY_ID[r.id] = r);
   RISKS_BY_LAYER = {};
   d.risks.forEach(r => (r.layers || []).forEach(l => { (RISKS_BY_LAYER[l] = RISKS_BY_LAYER[l] || []).push(r); }));
-  buildMap(); buildMobile(); buildExplorer(); buildMapping(); buildRecs();
+  setHeroStats();
+  buildMap(); buildMobile(); buildExplorer(); buildMapping(); buildRecs(); buildIncidentIndex();
   document.querySelectorAll('.dl').forEach(attachTilt);
   document.querySelectorAll('.stat').forEach(attachGlow);
   initReveal();

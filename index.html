@@ -33,8 +33,9 @@
       <a class="hide-sm" href="#map-sec">Threat map</a>
       <a class="hide-sm" href="#explorer">Risk taxonomy</a>
       <a class="hide-sm" href="#mapping">Solutions &amp; gaps</a>
-      <a class="hide-sm" href="#recs">Recommendations</a>
+      <a class="hide-sm" href="#incidents">Incidents</a>
       <a class="hide-sm" href="#read">Read</a>
+      <a class="hide-sm" href="#about">About</a>
       <a class="nav-cta" href="https://github.com/dannyliv/e2e-Agentic-Risks" target="_blank" rel="noopener">GitHub</a>
     </nav>
   </div>
@@ -48,11 +49,11 @@
     <p class="lede reveal d3">AI agents are not an app bolted onto old infrastructure. They are a new trust topology, where untrusted text, non-human identities, and autonomous action collapse the boundaries classic security kept apart. This is the end-to-end map of where they get attacked, what defends them, and what still has no answer.</p>
     <div class="by reveal d4">By <b>Danny Livshits</b> &middot; an end-to-end view across the full agentic deployment stack</div>
     <div class="stat-row reveal d5">
-      <div class="stat"><div class="n cy">31</div><div class="l">canonical risks</div></div>
-      <div class="stat"><div class="n">11</div><div class="l">deployment layers</div></div>
-      <div class="stat"><div class="n">56</div><div class="l">verified real incidents</div></div>
-      <div class="stat"><div class="n">8</div><div class="l">trust boundaries</div></div>
-      <div class="stat"><div class="n" style="color:var(--high)">19</div><div class="l">under-served / open</div></div>
+      <div class="stat"><div class="n cy" id="st-risks">42</div><div class="l">canonical risks</div></div>
+      <div class="stat"><div class="n" id="st-layers">11</div><div class="l">deployment layers</div></div>
+      <div class="stat"><div class="n" id="st-incidents">56</div><div class="l">verified real incidents</div></div>
+      <div class="stat"><div class="n" id="st-boundaries">7</div><div class="l">trust boundaries</div></div>
+      <div class="stat"><div class="n" style="color:var(--high)" id="st-gaps">21</div><div class="l">under-served / open</div></div>
     </div>
   </section>
 </div>
@@ -73,7 +74,7 @@
         <span class="hint">click a layer &middot; <b>highest-severity risk colors each badge</b></span>
       </div>
       <div id="mapwrap"><svg id="map" role="img" aria-label="End-to-end enterprise AI agent deployment and attack-surface map"></svg></div>
-      <div id="mapmobile" aria-label="End-to-end deployment layers, stacked"></div>
+      <div id="mapmobile" role="list" aria-label="End-to-end deployment layers, stacked"></div>
       <div class="diagram-legend">
         <span><i style="background:var(--crit)"></i>Critical layer</span>
         <span><i style="background:var(--high)"></i>High</span>
@@ -95,6 +96,18 @@
       <p>Every risk is mapped to the layers it touches, the OWASP LLM and Agentic threat IDs, a validated real-world example, and an honest call on how well it is solved. Filter, then click a card for the full entry.</p>
     </div>
     <div id="filters" class="filters"></div>
+    <div id="searchsort">
+      <input id="search" type="search" placeholder="Search risks, mechanisms, examples..." aria-label="Search risks">
+      <label class="sortlbl">Sort
+        <select id="sort" aria-label="Sort risks">
+          <option value="severity">by severity</option>
+          <option value="id">by ID</option>
+          <option value="family">by family</option>
+          <option value="gap">by coverage gap</option>
+        </select>
+      </label>
+      <span id="resultcount" class="resultcount"></span>
+    </div>
     <div id="grid" class="grid"></div>
   </section>
 </div>
@@ -122,6 +135,18 @@
 </div>
 
 <div class="wrap">
+  <section id="incidents">
+    <div class="sec-head">
+      <div class="tag">The evidence</div>
+      <h2>Every claim is a real, verified incident</h2>
+      <p>The taxonomy is built on documented, primary-source-verified events, not hypotheticals. Browse the full incident index; each links to its source and the risks it demonstrates.</p>
+    </div>
+    <div id="incsearchwrap"><input id="incsearch" type="search" placeholder="Search incidents by name, product, or date..." aria-label="Search incidents"><span id="inccount" class="resultcount"></span></div>
+    <div class="table-scroll" style="max-height:560px"><table class="map" id="inctable"></table></div>
+  </section>
+</div>
+
+<div class="wrap">
   <section id="read">
     <div class="sec-head">
       <div class="tag">Read the whitepaper</div>
@@ -141,6 +166,42 @@
         <span>All 31 risks, seven solution categories, the full mapping with gap calls, and a reference control architecture.</span>
         <span class="arrow">&rarr;</span>
       </a>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section id="about">
+    <div class="sec-head">
+      <div class="tag">About, method &amp; scope</div>
+      <h2>How this was built, and what it does not claim</h2>
+      <p>An honest account of the method, sources, scope, and limitations behind the model.</p>
+    </div>
+    <div class="about-grid">
+      <div class="about-card">
+        <h3>Author</h3>
+        <p>By <b>Danny Livshits</b>. This is independent security research. Two of the author's open-source research tools are referenced where relevant and disclosed as such, not as products: <a href="https://github.com/dannyliv/a2a-audit" target="_blank" rel="noopener">a2a-audit</a> (an A2A agent-card posture auditor) and Agent Guard (open prompt-injection detection models). Their inclusion is disclosed, and they are rated on the same honest scale as every other control.</p>
+      </div>
+      <div class="about-card">
+        <h3>Method</h3>
+        <p>Attack vectors were enumerated across thirteen domains, then every candidate incident was adversarially verified against its primary source (CVE record, vendor advisory, or original disclosure) before entering the dataset. Findings were clustered into a canonical taxonomy mapped to an eleven-layer reference architecture grounded in Google SAIF, CSA MAESTRO, and the OWASP Agentic Security Initiative. A second adversarial-review pass surfaced eleven further risks and reconciled the taxonomy, expanding it to 42.</p>
+      </div>
+      <div class="about-card">
+        <h3>Sources &amp; standards</h3>
+        <p>Risks are mapped to the OWASP Top 10 for LLM Applications 2025, the OWASP Agentic threat taxonomy, MITRE ATLAS, CSA MAESTRO, and NIST AI RMF. Every incident in the index carries a primary-source link; the live dataset is open in <a href="assets/data.json" target="_blank" rel="noopener">data.json</a> and the source is <a href="https://github.com/dannyliv/e2e-Agentic-Risks" target="_blank" rel="noopener">MIT-licensed on GitHub</a>.</p>
+      </div>
+      <div class="about-card">
+        <h3>Scope &amp; limitations</h3>
+        <p>This is a security-and-controls view of enterprise AI agents. It does not cover model bias, content safety, or AI ethics except where they create a security consequence. Several load-bearing examples (Morris II, Sleeper Agents, agentic misalignment) are controlled research demonstrations, labeled as such, not in-the-wild incidents. Coverage and gap calls reflect the public market as of the date below and will drift; verify every control against your own environment.</p>
+      </div>
+      <div class="about-card">
+        <h3>How to cite</h3>
+        <p>Livshits, Danny. <i>Securing the Agentic Enterprise: An End-to-End View of AI Agent Risk.</i> 2026. <span class="mono">https://dannyliv.github.io/e2e-Agentic-Risks/</span></p>
+      </div>
+      <div class="about-card">
+        <h3>Last updated</h3>
+        <p><span id="lastupdated" class="mono">June 2026</span>. The taxonomy, mapping, and incident index are versioned with the repository; the most current state is always the live site and <span class="mono">data.json</span>.</p>
+      </div>
     </div>
   </section>
 </div>
