@@ -1,5 +1,5 @@
 /* Securing the Agentic Enterprise - interactive companion
-   Deployment threat map, taxonomy explorer, solution mapping, recommendations. */
+   Deployment threat map (desktop SVG + mobile stack), taxonomy explorer, mapping, recommendations. */
 'use strict';
 const SVGNS = 'http://www.w3.org/2000/svg';
 const $ = (s, r = document) => r.querySelector(s);
@@ -21,37 +21,32 @@ function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').
 
 let DATA, RISK_BY_ID, RISKS_BY_LAYER;
 
-/* ---------------- diagram layout ---------------- */
-const W = 1100, H = 575;
-const CW = 188, CH = 92, CHs = 96;
-const LAYOUT = {
-  L1: { x: 35,  y: 156, w: CW, h: CHs },
-  L4: { x: 256, y: 104, w: CW, h: CH },
-  L2: { x: 256, y: 212, w: CW, h: CH },
-  L3: { x: 478, y: 156, w: 168, h: CHs },
-  L5: { x: 662, y: 104, w: CW, h: CH },
-  L6: { x: 662, y: 212, w: CW, h: CH },
-  L7: { x: 878, y: 104, w: CW, h: CH },
-  L8: { x: 878, y: 212, w: CW, h: CH },
-  L9:  { x: 35, y: 346, w: 1031, h: 56, plane: 1 },
-  L10: { x: 35, y: 416, w: 1031, h: 56, plane: 1 },
-  L11: { x: 35, y: 486, w: 1031, h: 56, plane: 1 },
-};
-const BANDS = [
-  { t: 'Ingress', x: 129 }, { t: 'Reasoning / Runtime', x: 350 }, { t: 'Model', x: 562 },
-  { t: 'Action / Tools', x: 756 }, { t: 'Data, Memory & Mesh', x: 972 },
-];
-const TBCHIPS = [
-  { x: 24,  t: 'TB0', full: 'Public internet: fully untrusted' },
-  { x: 234, t: 'TB1', full: 'Untrusted content crosses into the instruction context' },
-  { x: 464, t: 'TB2', full: 'Model / context-window boundary' },
-  { x: 654, t: 'TB3', full: 'Model intent becomes a real-world action' },
-  { x: 866, t: 'TB5', full: 'Trust in peer agents and external services' },
-];
-const TBV = [234, 464, 654, 866];
-const BACK = new Set(['L3>L2', 'L6>L4', 'L7>L4', 'L8>L4', 'L6>L1', 'L2>L10', 'L5>L10', 'L6>L10']);
-const anchorsOf = L => ({ cx: L.x + L.w / 2, cy: L.y + L.h / 2, l: [L.x, L.y + L.h / 2], r: [L.x + L.w, L.y + L.h / 2], t: [L.x + L.w / 2, L.y], b: [L.x + L.w / 2, L.y + L.h] });
 const SHORT = { L1: 'Human & Input Channels', L2: 'Orchestration & Runtime', L3: 'Foundation Model / Gateway', L4: 'Prompt & Context Assembly', L5: 'Tools & Function Calling', L6: 'External Data, SaaS & Actions', L7: 'Memory & Vector / RAG', L8: 'Other Agents (A2A Mesh)', L9: 'Identity, Secrets & Authorization', L10: 'Observability & Governance', L11: 'Supply Chain & Provenance' };
+
+/* ---------------- desktop diagram layout ----------------
+   Clean linear request pipeline (L1->L4->L2->L5->L6) with branch cards
+   (L3 model, L7 memory, L8 agents) and three cross-cutting foundation planes.
+   Every connector runs in a clear channel; nothing is drawn under a card. */
+const W = 1180, H = 612;
+const CW = 162, CH = 96, BH = 88, PW = 1108, PH = 50;
+const PIPE_Y = 138, BR_Y = 296;
+const COL = { L1: 36, L4: 272, L2: 508, L5: 744, L6: 980 };       // pipeline (5 across)
+const BRX = { L7: 272, L3: 508, L8: 744 };                         // branch cards under L4/L2/L5
+const PLANE = { L9: 412, L10: 474, L11: 536 };
+const LAYOUT = {};
+['L1', 'L4', 'L2', 'L5', 'L6'].forEach(id => LAYOUT[id] = { x: COL[id], y: PIPE_Y, w: CW, h: CH });
+['L7', 'L3', 'L8'].forEach(id => LAYOUT[id] = { x: BRX[id], y: BR_Y, w: CW, h: BH });
+['L9', 'L10', 'L11'].forEach(id => LAYOUT[id] = { x: 36, y: PLANE[id], w: PW, h: PH, plane: 1 });
+
+const cx = id => LAYOUT[id].x + LAYOUT[id].w / 2;
+const cy = id => LAYOUT[id].y + LAYOUT[id].h / 2;
+
+const TBCHIPS = [
+  { x: 20,  t: 'TB0', full: 'Public internet: fully untrusted' },
+  { x: 234, t: 'TB1', full: 'Untrusted content crosses into the instruction context (L4)' },
+  { x: 706, t: 'TB3', full: 'Model intent becomes a real-world action (L5 tools)' },
+  { x: 942, t: 'TB5', full: 'Trust in peer agents and external services' },
+];
 
 function layerSeverity(lid) {
   const rs = RISKS_BY_LAYER[lid] || [];
@@ -67,104 +62,92 @@ function addDefs(map) {
   cg.appendChild(svg('stop', { offset: '1', 'stop-color': '#0a121d' }));
   defs.appendChild(cg);
   const pg = svg('linearGradient', { id: 'planegrad', x1: '0', y1: '0', x2: '0', y2: '1' });
-  pg.appendChild(svg('stop', { offset: '0', 'stop-color': '#121d2c' }));
-  pg.appendChild(svg('stop', { offset: '1', 'stop-color': '#0a1119' }));
+  pg.appendChild(svg('stop', { offset: '0', 'stop-color': '#101b2a' }));
+  pg.appendChild(svg('stop', { offset: '1', 'stop-color': '#0a1019' }));
   defs.appendChild(pg);
   const sh = svg('linearGradient', { id: 'sheen', x1: '0', y1: '0', x2: '0', y2: '1' });
-  sh.appendChild(svg('stop', { offset: '0', 'stop-color': '#ffffff', 'stop-opacity': '0.08' }));
+  sh.appendChild(svg('stop', { offset: '0', 'stop-color': '#ffffff', 'stop-opacity': '0.09' }));
   sh.appendChild(svg('stop', { offset: '0.5', 'stop-color': '#ffffff', 'stop-opacity': '0' }));
   defs.appendChild(sh);
-  const fg = svg('linearGradient', { id: 'flowgrad', x1: '0', y1: '0', x2: '1', y2: '0' });
-  fg.appendChild(svg('stop', { offset: '0', 'stop-color': '#41e0d6', 'stop-opacity': '0.95' }));
-  fg.appendChild(svg('stop', { offset: '1', 'stop-color': '#41e0d6', 'stop-opacity': '0.2' }));
-  defs.appendChild(fg);
   const flt = svg('filter', { id: 'glow', x: '-40%', y: '-40%', width: '180%', height: '180%' });
   flt.appendChild(svg('feDropShadow', { dx: '0', dy: '0', stdDeviation: '7', 'flood-color': '#41e0d6', 'flood-opacity': '0.6' }));
   defs.appendChild(flt);
-  const mk = svg('marker', { id: 'arrow', viewBox: '0 0 10 10', refX: '8', refY: '5', markerWidth: '6.5', markerHeight: '6.5', orient: 'auto-start-reverse' });
-  mk.appendChild(svg('path', { d: 'M0,0 L10,5 L0,10 z', fill: '#41e0d6' }));
-  defs.appendChild(mk);
-  const mk2 = svg('marker', { id: 'arrowd', viewBox: '0 0 10 10', refX: '8', refY: '5', markerWidth: '6', markerHeight: '6', orient: 'auto-start-reverse' });
-  mk2.appendChild(svg('path', { d: 'M0,0 L10,5 L0,10 z', fill: '#34465f' }));
-  defs.appendChild(mk2);
+  for (const [id, col] of [['arrow', '#41e0d6'], ['arrowd', '#6f7f9c']]) {
+    const mk = svg('marker', { id, viewBox: '0 0 10 10', refX: '8', refY: '5', markerWidth: '7', markerHeight: '7', orient: 'auto-start-reverse' });
+    mk.appendChild(svg('path', { d: 'M0,0 L10,5 L0,10 z', fill: col }));
+    defs.appendChild(mk);
+  }
   map.appendChild(defs);
 }
+
+function line(x1, y1, x2, y2, cls) { return svg('line', { x1, y1, x2, y2, class: cls }); }
 
 function buildMap() {
   const map = $('#map');
   map.setAttribute('viewBox', `0 0 ${W} ${H}`);
   addDefs(map);
 
-  // band labels
-  BANDS.forEach(b => map.appendChild(svg('text', { x: b.x, y: 54, 'text-anchor': 'middle', class: 'band-label' }, [txt(b.t)])));
+  // stage labels
+  map.appendChild(svg('text', { x: 36, y: 36, class: 'stage-label' }, [txt('THE REQUEST PATH')]));
+  map.appendChild(svg('text', { x: 36, y: 36 + 0, class: 'stage-label', style: 'opacity:0' }, [txt('')]));
+  map.appendChild(svg('text', { x: 36, y: BR_Y - 14, class: 'stage-label' }, [txt('MEMORY, MODEL & MESH')]));
+  map.appendChild(svg('text', { x: 36, y: PLANE.L9 - 14, class: 'stage-label' }, [txt('CROSS-CUTTING CONTROL & SUPPLY PLANES  ·  every layer above runs on these')]));
 
-  // vertical trust-boundary lines
-  TBV.forEach(x => map.appendChild(svg('line', { x1: x, y1: 92, x2: x, y2: 312, class: 'tb-line' })));
-  map.appendChild(svg('line', { x1: 22, y1: 100, x2: 22, y2: 312, class: 'tb-line' }));
-
-  // planes (background)
+  // foundation planes (drawn first, as background)
   ['L9', 'L10', 'L11'].forEach(id => drawPlane(map, id));
 
-  // flows
+  // connectors (in clear channels, never under a card)
   const fg = svg('g', {});
-  DATA.diagram.data_flow.forEach(e => {
-    const A = LAYOUT[e.from], B = LAYOUT[e.to];
-    if (!A || !B) return;
-    fg.appendChild(flow(A, B, BACK.has(e.from + '>' + e.to)));
+  const yMid = PIPE_Y + CH / 2;
+  // forward pipeline horizontals
+  [['L1', 'L4'], ['L4', 'L2'], ['L2', 'L5'], ['L5', 'L6']].forEach(([a, b]) =>
+    fg.appendChild(line(LAYOUT[a].x + CW, yMid, LAYOUT[b].x, yMid, 'flow fwd')));
+  // branch verticals (forward down + return up, offset so both read)
+  [['L4', 'L7'], ['L2', 'L3'], ['L5', 'L8']].forEach(([a, b]) => {
+    const x = cx(a);
+    fg.appendChild(line(x - 6, PIPE_Y + CH, x - 6, BR_Y, 'flow fwd v'));
+    fg.appendChild(line(x + 6, BR_Y, x + 6, PIPE_Y + CH, 'flow data v'));
   });
+  // egress / response arc L6 -> L1 over the top
+  fg.appendChild(svg('path', { d: `M${cx('L6')},${PIPE_Y} C${cx('L6')},58 ${cx('L1')},58 ${cx('L1')},${PIPE_Y}`, class: 'flow data arc' }));
   map.appendChild(fg);
+  // egress label
+  map.appendChild(svg('text', { x: (cx('L1') + cx('L6')) / 2, y: 52, 'text-anchor': 'middle', class: 'flow-label' }, [txt('response / egress channel (a documented exfiltration path)')]));
 
-  // TB chips on top (above cards, never overlapping)
-  TBCHIPS.forEach(tb => map.appendChild(tbChip(tb)));
+  // TB chips and short boundary ticks
+  TBCHIPS.forEach(tb => { map.appendChild(tbChip(tb)); if (tb.x > 30) map.appendChild(line(tb.x, PIPE_Y - 6, tb.x, PIPE_Y + CH + 6, 'tb-line')); });
+  map.appendChild(line(20, PIPE_Y - 6, 20, PIPE_Y + CH + 6, 'tb-line'));
+  // TB2 chip on the L2->L3 model link
+  const tb2 = tbChip({ x: cx('L2') + 34, t: 'TB2', full: 'Model / context-window boundary' }, PIPE_Y + CH + 8);
+  map.appendChild(tb2);
 
-  // core cards
-  ['L1', 'L4', 'L2', 'L3', 'L5', 'L6', 'L7', 'L8'].forEach(id => drawCard(map, id));
+  // cards on top
+  ['L1', 'L4', 'L2', 'L5', 'L6', 'L7', 'L3', 'L8'].forEach(id => drawCard(map, id));
   ['L9', 'L10', 'L11'].forEach(id => labelPlane(map, id));
 }
 
-function tbChip(tb) {
+function tbChip(tb, y) {
   const g = svg('g', { class: 'tb-chip' });
-  const w = 34, h = 18, x = tb.x - w / 2, y = 68;
-  g.appendChild(svg('rect', { x, y, width: w, height: h, rx: 9 }));
-  g.appendChild(svg('text', { x: tb.x, y: y + 13, 'text-anchor': 'middle' }, [txt(tb.t)]));
+  const w = 34, h = 18, x = tb.x - w / 2; const yy = (y == null ? 96 : y);
+  g.appendChild(svg('rect', { x, y: yy, width: w, height: h, rx: 9 }));
+  g.appendChild(svg('text', { x: tb.x, y: yy + 13, 'text-anchor': 'middle' }, [txt(tb.t)]));
   g.appendChild(svg('title', {}, [txt(tb.full)]));
   return g;
 }
 
-function flow(A, B, back) {
-  const a = anchorsOf(A), b = anchorsOf(B);
-  let p1, p2;
-  if (Math.abs(a.cy - b.cy) < 30 && b.cx > a.cx) { p1 = a.r; p2 = b.l; }
-  else if (Math.abs(a.cy - b.cy) < 30 && b.cx < a.cx) { p1 = a.l; p2 = b.r; }
-  else if (b.cy > a.cy) { p1 = a.b; p2 = b.t; }
-  else { p1 = a.t; p2 = b.b; }
-  const mx = (p1[0] + p2[0]) / 2, my = (p1[1] + p2[1]) / 2;
-  const d = `M${p1[0]},${p1[1]} Q${mx},${p1[1]} ${mx},${my} T${p2[0]},${p2[1]}`;
-  return svg('path', { d, class: 'flow ' + (back ? 'data' : 'fwd') });
-}
-
-function cardBadge(g, L, sev, n) {
-  const w = 30, bx = L.x + L.w - w - 12, by = L.y + 12;
-  g.appendChild(svg('rect', { x: bx, y: by, width: w, height: 18, rx: 9, fill: 'rgba(0,0,0,.4)', stroke: SEVC[sev], 'stroke-width': 1.2 }));
-  g.appendChild(svg('text', { class: 'rc', x: bx + w / 2, y: by + 13, 'text-anchor': 'middle', fill: SEVC[sev] }, [txt(String(n))]));
-}
-
 function drawCard(map, id) {
-  const L = LAYOUT[id], a = DATA.architecture.layers.find(x => x.id === id) || {};
+  const L = LAYOUT[id];
   const { sev, n } = layerSeverity(id);
   const g = svg('g', { class: 'layer-card', 'data-layer': id, tabindex: '0', role: 'button', 'aria-label': SHORT[id] });
-  // depth shadow / extrusion
   g.appendChild(svg('rect', { x: L.x + 3, y: L.y + 5, width: L.w, height: L.h, rx: 12, fill: '#03060b', opacity: '0.55' }));
-  // body
   g.appendChild(svg('rect', { class: 'body', x: L.x, y: L.y, width: L.w, height: L.h, rx: 12, fill: 'url(#cardgrad)', stroke: '#2a3a55', 'stroke-width': 1.2 }));
-  // top sheen
   g.appendChild(svg('rect', { x: L.x + 1, y: L.y + 1, width: L.w - 2, height: L.h * 0.5, rx: 11, fill: 'url(#sheen)' }));
-  // severity accent bar (left)
   g.appendChild(svg('rect', { x: L.x, y: L.y + 9, width: 3.5, height: L.h - 18, rx: 2, fill: SEVC[sev] }));
-  // id + badge + name
-  g.appendChild(svg('text', { class: 'lid', x: L.x + 16, y: L.y + 25 }, [txt(id)]));
-  cardBadge(g, L, sev, n);
-  wrapText(g, SHORT[id], L.x + 16, L.y + 51, L.w - 26, 15, 'lname', 2);
+  g.appendChild(svg('text', { class: 'lid', x: L.x + 15, y: L.y + 24 }, [txt(id)]));
+  const w = 30, bx = L.x + L.w - w - 11, by = L.y + 11;
+  g.appendChild(svg('rect', { x: bx, y: by, width: w, height: 18, rx: 9, fill: 'rgba(0,0,0,.4)', stroke: SEVC[sev], 'stroke-width': 1.2 }));
+  g.appendChild(svg('text', { class: 'rc', x: bx + w / 2, y: by + 13, 'text-anchor': 'middle', fill: SEVC[sev] }, [txt(String(n))]));
+  wrapText(g, SHORT[id], L.x + 15, L.y + (L.h > 90 ? 50 : 48), L.w - 24, 14, 'lname', 3);
   g.addEventListener('click', () => openLayer(id));
   g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLayer(id); } });
   map.appendChild(g);
@@ -173,9 +156,9 @@ function drawCard(map, id) {
 function drawPlane(map, id) {
   const L = LAYOUT[id];
   const g = svg('g', { class: 'plane layer-card', 'data-layer': id, tabindex: '0', role: 'button', 'aria-label': SHORT[id] });
-  g.appendChild(svg('rect', { x: L.x + 2, y: L.y + 4, width: L.w, height: L.h, rx: 12, fill: '#03060b', opacity: '0.5' }));
-  g.appendChild(svg('rect', { class: 'body', x: L.x, y: L.y, width: L.w, height: L.h, rx: 12, fill: 'url(#planegrad)', stroke: '#243349', 'stroke-width': 1.1, 'stroke-dasharray': '1 0' }));
-  g.appendChild(svg('rect', { x: L.x + 1, y: L.y + 1, width: L.w - 2, height: L.h * 0.45, rx: 11, fill: 'url(#sheen)' }));
+  g.appendChild(svg('rect', { x: L.x + 2, y: L.y + 4, width: L.w, height: L.h, rx: 11, fill: '#03060b', opacity: '0.5' }));
+  g.appendChild(svg('rect', { class: 'body', x: L.x, y: L.y, width: L.w, height: L.h, rx: 11, fill: 'url(#planegrad)', stroke: '#243349', 'stroke-width': 1.1 }));
+  g.appendChild(svg('rect', { x: L.x + 1, y: L.y + 1, width: L.w - 2, height: L.h * 0.45, rx: 10, fill: 'url(#sheen)' }));
   g.addEventListener('click', () => openLayer(id));
   g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLayer(id); } });
   map.appendChild(g);
@@ -186,13 +169,13 @@ function labelPlane(map, id) {
   const { sev, n } = layerSeverity(id);
   const tag = { L9: 'TB4 identity boundary', L10: 'TB7 control plane: out-of-band, highest trust', L11: 'TB6 provenance boundary' }[id];
   const g = map.querySelector(`g.plane[data-layer="${id}"]`);
-  g.appendChild(svg('rect', { x: L.x, y: L.y + 9, width: 3.5, height: L.h - 18, rx: 2, fill: SEVC[sev] }));
-  g.appendChild(svg('text', { class: 'lid', x: L.x + 18, y: L.y + 23 }, [txt(id)]));
-  g.appendChild(svg('text', { x: L.x + 52, y: L.y + 23, style: 'fill:#eaeef6;font-family:var(--font-ui);font-size:14.5px;font-weight:600' }, [txt(SHORT[id])]));
-  g.appendChild(svg('text', { class: 'plane-label-tag', x: L.x + 52, y: L.y + 41 }, [txt(tag)]));
-  const bw = 150, bx = L.x + L.w - bw - 16;
-  g.appendChild(svg('rect', { x: bx, y: L.y + 16, width: bw, height: 24, rx: 12, fill: 'rgba(0,0,0,.35)', stroke: SEVC[sev], 'stroke-width': 1.1 }));
-  g.appendChild(svg('text', { x: bx + bw / 2, y: L.y + 32, 'text-anchor': 'middle', class: 'rc', fill: SEVC[sev] }, [txt(n + ' risks on this plane')]));
+  g.appendChild(svg('rect', { x: L.x, y: L.y + 8, width: 3.5, height: L.h - 16, rx: 2, fill: SEVC[sev] }));
+  g.appendChild(svg('text', { class: 'lid', x: L.x + 18, y: L.y + 21 }, [txt(id)]));
+  g.appendChild(svg('text', { x: L.x + 52, y: L.y + 21, style: 'fill:#eaeef6;font-family:var(--font-ui);font-size:14px;font-weight:600' }, [txt(SHORT[id])]));
+  g.appendChild(svg('text', { class: 'plane-label-tag', x: L.x + 52, y: L.y + 38 }, [txt(tag)]));
+  const bw = 150, bx = L.x + L.w - bw - 14;
+  g.appendChild(svg('rect', { x: bx, y: L.y + 14, width: bw, height: 22, rx: 11, fill: 'rgba(0,0,0,.35)', stroke: SEVC[sev], 'stroke-width': 1.1 }));
+  g.appendChild(svg('text', { x: bx + bw / 2, y: L.y + 29, 'text-anchor': 'middle', class: 'rc', fill: SEVC[sev] }, [txt(n + ' risks on this plane')]));
 }
 
 function wrapText(g, str, x, y, maxw, fs, cls, maxlines) {
@@ -200,12 +183,41 @@ function wrapText(g, str, x, y, maxw, fs, cls, maxlines) {
   words.forEach(w => { if ((line + ' ' + w).trim().length > cpl) { lines.push(line.trim()); line = w; } else line += ' ' + w; });
   if (line.trim()) lines.push(line.trim());
   lines = lines.slice(0, maxlines);
-  lines.forEach((ln, i) => g.appendChild(svg('text', { class: cls, x, y: y + i * (fs + 4) }, [txt(ln)])));
+  lines.forEach((ln, i) => g.appendChild(svg('text', { class: cls, x, y: y + i * (fs + 3) }, [txt(ln)])));
+}
+
+/* ---------------- mobile stacked diagram ---------------- */
+function buildMobile() {
+  const wrap = $('#mapmobile'); if (!wrap) return;
+  wrap.innerHTML = '';
+  const groups = [
+    { label: 'The request path', ids: ['L1', 'L4', 'L2', 'L3', 'L5', 'L6'] },
+    { label: 'Memory & mesh', ids: ['L7', 'L8'] },
+    { label: 'Cross-cutting control & supply planes', ids: ['L9', 'L10', 'L11'] },
+  ];
+  groups.forEach((grp, gi) => {
+    wrap.appendChild(el('div', { class: 'mgroup-label' }, esc(grp.label)));
+    grp.ids.forEach((id, idx) => {
+      const a = DATA.architecture.layers.find(x => x.id === id) || {};
+      const { sev, n } = layerSeverity(id);
+      const c = el('div', { class: 'mlayer', 'data-layer': id, role: 'button', tabindex: '0' });
+      c.style.setProperty('--sev', SEVC[sev]);
+      c.innerHTML = `<span class="mstripe"></span>
+        <div class="mtop"><span class="mid">${id}</span><span class="mbadge" style="color:${SEVC[sev]};border-color:${SEVC[sev]}">${n} risks</span></div>
+        <div class="mname">${esc(SHORT[id])}</div>
+        <div class="msum">${esc((a.trust_boundary || '').split('(')[0].trim())}</div>`;
+      c.addEventListener('click', () => openLayer(id));
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLayer(id); } });
+      wrap.appendChild(c);
+      const last = (gi === groups.length - 1) && (idx === grp.ids.length - 1);
+      if (!last && !(idx === grp.ids.length - 1)) wrap.appendChild(el('div', { class: 'mconn' }));
+    });
+  });
 }
 
 /* ---------------- drawer ---------------- */
 const mask = $('#mask'), drawer = $('#drawer');
-function closeDrawer() { drawer.classList.remove('open'); mask.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); document.querySelectorAll('.layer-card.active').forEach(n => n.classList.remove('active')); }
+function closeDrawer() { drawer.classList.remove('open'); mask.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); document.querySelectorAll('.layer-card.active,.mlayer.active').forEach(n => n.classList.remove('active')); }
 $('#dclose').addEventListener('click', closeDrawer);
 mask.addEventListener('click', closeDrawer);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
@@ -213,8 +225,8 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(
 function openLayer(id) {
   const a = DATA.architecture.layers.find(x => x.id === id) || {};
   const ds = DATA.diagram.layers.find(x => x.id === id) || {};
-  document.querySelectorAll('.layer-card.active').forEach(n => n.classList.remove('active'));
-  const node = document.querySelector(`.layer-card[data-layer="${id}"]`); if (node) node.classList.add('active');
+  document.querySelectorAll('.layer-card.active,.mlayer.active').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll(`[data-layer="${id}"]`).forEach(n => n.classList.add('active'));
   $('#dlid').textContent = id + '  ·  ' + (a.trust_boundary || '');
   $('#dname').textContent = SHORT[id] || a.name;
   $('#dsum').textContent = (ds.summary || a.description || '').replace(/\s+/g, ' ').trim();
@@ -372,6 +384,7 @@ function attachGlow(node) {
 function attachTilt(node) {
   attachGlow(node);
   node.addEventListener('pointermove', e => {
+    if (window.matchMedia('(max-width:760px)').matches) return;
     const b = node.getBoundingClientRect();
     const rx = ((e.clientY - b.top) / b.height - 0.5) * -5;
     const ry = ((e.clientX - b.left) / b.width - 0.5) * 5;
@@ -383,7 +396,7 @@ function initReveal() {
   const targets = document.querySelectorAll('.sec-head, .diagram-shell, #grid, .filters, .table-scroll, #recsgrid, .dl-row, .stat-row, .disclaimer');
   const io = new IntersectionObserver((ents) => {
     ents.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
-  }, { threshold: 0.08 });
+  }, { threshold: 0.06 });
   targets.forEach(t => { t.classList.add('ros'); io.observe(t); });
 }
 
@@ -393,7 +406,7 @@ fetch('assets/data.json').then(r => r.json()).then(d => {
   RISK_BY_ID = {}; d.risks.forEach(r => RISK_BY_ID[r.id] = r);
   RISKS_BY_LAYER = {};
   d.risks.forEach(r => (r.layers || []).forEach(l => { (RISKS_BY_LAYER[l] = RISKS_BY_LAYER[l] || []).push(r); }));
-  buildMap(); buildExplorer(); buildMapping(); buildRecs();
+  buildMap(); buildMobile(); buildExplorer(); buildMapping(); buildRecs();
   document.querySelectorAll('.dl').forEach(attachTilt);
   document.querySelectorAll('.stat').forEach(attachGlow);
   initReveal();

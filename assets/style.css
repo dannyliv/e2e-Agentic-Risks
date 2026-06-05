@@ -157,7 +157,8 @@ section { padding: 70px 0; position: relative; }
 .diagram-bar .hint { margin-left:auto; color: var(--fg-faint); }
 .diagram-bar .hint b { color: var(--cy); }
 #mapwrap { width:100%; overflow-x:auto; position:relative; z-index:1; padding: 6px; }
-#map { display:block; width: 100%; min-width: 1000px; height:auto; }
+#map { display:block; width: 100%; min-width: 960px; height:auto; }
+#mapmobile { display:none; }
 .diagram-legend { display:flex; flex-wrap:wrap; gap:16px 22px; padding: 12px 20px 14px; border-top:1px solid var(--line); font-family: var(--font-mono); font-size:11px; color: var(--fg-mute); background: rgba(0,0,0,.18); position:relative; z-index:3; }
 .diagram-legend span { display:inline-flex; align-items:center; gap:7px; }
 .diagram-legend i { width:13px;height:13px;border-radius:4px; display:inline-block; }
@@ -174,11 +175,14 @@ section { padding: 70px 0; position: relative; }
 .lid { font-family: var(--font-mono); fill: var(--cy); font-size: 12px; font-weight:600; letter-spacing:.5px; }
 .lname { font-family: var(--font-ui); fill: var(--fg); font-size: 15px; font-weight: 600; }
 .rc { font-family: var(--font-mono); font-size: 11px; font-weight: 700; }
-.flow { fill:none; stroke-width: 1.7; marker-end: url(#arrow); }
-.flow.fwd { stroke: url(#flowgrad); stroke-dasharray: 7 8; animation: dash 1.1s linear infinite; filter: drop-shadow(0 0 3px rgba(65,224,214,.4)); }
-.flow.data { stroke: #34465f; stroke-width:1.4; stroke-dasharray: 3 6; opacity:.6; marker-end:url(#arrowd); animation: dash 2.4s linear infinite; }
-@keyframes dash { to { stroke-dashoffset: -30; } }
-.tb-line { stroke: var(--cy-2); stroke-width: 1; stroke-dasharray: 2 6; opacity:.42; }
+.flow { fill:none; }
+.flow.fwd { stroke: #41e0d6; stroke-width: 2.1; marker-end: url(#arrow); stroke-dasharray: 7 7; animation: dash 1s linear infinite; filter: drop-shadow(0 0 3.5px rgba(65,224,214,.5)); }
+.flow.data { stroke: #7c8aa6; stroke-width: 1.7; marker-end: url(#arrowd); stroke-dasharray: 3 6; animation: dash 2.4s linear infinite; opacity:.82; }
+.flow.arc { filter: none; }
+@keyframes dash { to { stroke-dashoffset: -28; } }
+.tb-line { stroke: var(--cy-2); stroke-width: 1; stroke-dasharray: 2 6; opacity:.45; }
+.stage-label { font-family: var(--font-mono); font-size: 11px; fill: var(--fg-faint); letter-spacing: 2px; text-transform: uppercase; }
+.flow-label { font-family: var(--font-mono); font-size: 10.5px; fill: #7c8aa6; }
 .tb-chip rect { fill: rgba(31,182,176,.12); stroke: var(--cy-2); stroke-width:1; }
 .tb-chip text { font-family: var(--font-mono); font-size: 10.5px; fill: var(--cy); font-weight:600; }
 .tb-chip { cursor: default; }
@@ -301,10 +305,34 @@ footer .ftlinks { display:flex; flex-direction:column; gap:8px; font-family: var
 footer .ftlinks a { color: var(--fg-mute); } footer .ftlinks a:hover{ color: var(--cy); }
 .legal { margin-top: 38px; font-family: var(--font-mono); font-size: 12px; color: var(--fg-faint); }
 
+/* mobile stacked diagram */
+#mapmobile { padding: 14px 14px 18px; }
+.mgroup-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--cy); margin: 20px 0 10px; }
+.mgroup-label:first-child { margin-top: 4px; }
+.mlayer { position: relative; border: 1px solid var(--line-2); border-radius: 13px; padding: 14px 16px 14px 20px; background: linear-gradient(165deg, rgba(22,32,47,.95), rgba(9,15,24,.92)); cursor: pointer; overflow: hidden; }
+.mlayer:active, .mlayer.active { border-color: var(--cy); }
+.mstripe { position:absolute; left:0; top:8px; bottom:8px; width:4px; border-radius:3px; background: var(--sev, var(--cy)); box-shadow: 0 0 12px var(--sev, var(--cy)); }
+.mlayer .mtop { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+.mlayer .mid { font-family: var(--font-mono); font-size:12px; font-weight:600; color: var(--cy); }
+.mlayer .mbadge { margin-left:auto; font-family: var(--font-mono); font-size:11px; font-weight:600; border:1px solid; border-radius:20px; padding:2px 9px; background: rgba(0,0,0,.3); }
+.mlayer .mname { font-family: var(--font-ui); font-weight:600; font-size:15.5px; color: var(--fg); line-height:1.25; }
+.mlayer .msum { font-family: var(--font-mono); font-size:10.5px; color: var(--fg-faint); margin-top:5px; }
+.mconn { width:2px; height:18px; margin: 2px auto; background: linear-gradient(180deg, var(--cy-2), transparent); position:relative; }
+.mconn::after { content:""; position:absolute; left:50%; bottom:-1px; transform:translateX(-50%); border-left:4px solid transparent; border-right:4px solid transparent; border-top:5px solid var(--cy-2); }
+
+@media (max-width: 760px){
+  #mapwrap, .diagram-legend { display:none; }
+  #mapmobile { display:block; }
+  .diagram-bar .hint { display:none; }
+  .drawer { width: 100vw; }
+  .exhibit-wrap { margin: 24px 0; }
+}
 @media (max-width: 680px){
   body{ font-size:16px; }
   .hero{ padding: 70px 0 44px; }
   section{ padding: 52px 0; }
+  .stat { min-width: calc(50% - 8px); flex: 1 1 calc(50% - 8px); }
+  .grid, .recs, .dl-row { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce){
   .bg-field::before, .flow, .brand .glyph { animation: none !important; }
