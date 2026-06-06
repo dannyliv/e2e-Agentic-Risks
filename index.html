@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Securing the Agentic Enterprise &mdash; An End-to-End View of AI Agent Risk</title>
-<meta name="description" content="An interactive, end-to-end map of how AI agents are deployed in the enterprise and where they get attacked: 31 validated risks across 11 deployment layers, mapped to real-world incidents, solutions, and the gaps that remain. By Danny Livshits.">
+<meta name="description" content="An interactive, end-to-end map of how AI agents are deployed in the enterprise and where they get attacked: 50 validated risks across 11 deployment layers, mapped to real-world incidents, solutions, and the gaps that remain. By Danny Livshits.">
 <meta name="author" content="Danny Livshits">
 <meta property="og:title" content="Securing the Agentic Enterprise: An End-to-End View of AI Agent Risk">
-<meta property="og:description" content="31 validated agentic-AI risks across an 11-layer enterprise deployment, each mapped to real incidents, solutions, and honest gap calls. Interactive threat map.">
+<meta property="og:description" content="50 validated agentic-AI risks across an 11-layer enterprise deployment, each mapped to real incidents, solutions, and honest gap calls. Interactive threat map.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://dannyliv.github.io/e2e-Agentic-Risks/">
 <meta property="og:image" content="https://dannyliv.github.io/e2e-Agentic-Risks/assets/og.png">
@@ -49,11 +49,11 @@
     <p class="lede reveal d3">AI agents are not an app bolted onto old infrastructure. They are a new trust topology, where untrusted text, non-human identities, and autonomous action collapse the boundaries classic security kept apart. This is the end-to-end map of where they get attacked, what defends them, and what still has no answer.</p>
     <div class="by reveal d4">By <b>Danny Livshits</b> &middot; an end-to-end view across the full agentic deployment stack</div>
     <div class="stat-row reveal d5">
-      <div class="stat"><div class="n cy" id="st-risks">42</div><div class="l">canonical risks</div></div>
+      <div class="stat"><div class="n cy" id="st-risks">50</div><div class="l">canonical risks</div></div>
       <div class="stat"><div class="n" id="st-layers">11</div><div class="l">deployment layers</div></div>
-      <div class="stat"><div class="n" id="st-incidents">56</div><div class="l">verified real incidents</div></div>
+      <div class="stat"><div class="n" id="st-incidents">70</div><div class="l">verified real incidents</div></div>
       <div class="stat"><div class="n" id="st-boundaries">7</div><div class="l">trust boundaries</div></div>
-      <div class="stat"><div class="n" style="color:var(--high)" id="st-gaps">21</div><div class="l">under-served / open</div></div>
+      <div class="stat"><div class="n" style="color:var(--high)" id="st-gaps">28</div><div class="l">under-served / open</div></div>
     </div>
   </section>
 </div>
@@ -65,7 +65,7 @@
     <div class="sec-head">
       <div class="tag">Figure 1 &middot; the spine</div>
       <h2>The end-to-end deployment, and where it gets attacked</h2>
-      <p>A single request crosses eleven layers and eight trust boundaries. Click any layer to see the surfaces it exposes, the validated incidents that hit it, the controls that help, and where coverage runs out.</p>
+      <p>A single request crosses eleven layers and seven trust boundaries. Click any layer to see the surfaces it exposes, the validated incidents that hit it, the controls that help, and where coverage runs out.</p>
     </div>
     <div class="diagram-shell">
       <div class="diagram-bar">
@@ -92,7 +92,7 @@
   <section id="explorer">
     <div class="sec-head">
       <div class="tag">The taxonomy</div>
-      <h2>Thirty-one risks across eight families</h2>
+      <h2>Fifty risks across eight families</h2>
       <p>Every risk is mapped to the layers it touches, the OWASP LLM and Agentic threat IDs, a validated real-world example, and an honest call on how well it is solved. Filter, then click a card for the full entry.</p>
     </div>
     <div id="filters" class="filters"></div>
@@ -117,7 +117,7 @@
     <div class="sec-head">
       <div class="tag">Coverage &amp; honest gaps</div>
       <h2>Risk to solution, and where it runs out</h2>
-      <p>The analytical core: each risk against its strongest controls and an explicit gap status. Two risks are open problems no product solves; seventeen are under-served by shipping tools.</p>
+      <p>The analytical core: each risk against its strongest controls and an explicit gap status. Four risks are open problems no product solves; most of the rest are under-served by shipping tools.</p>
     </div>
     <div class="table-scroll"><table class="map" id="maptable"></table></div>
   </section>
@@ -127,7 +127,7 @@
   <section id="recs">
     <div class="sec-head">
       <div class="tag">End-to-end mitigation</div>
-      <h2>Eight moves that contain the consequential half</h2>
+      <h2>Nine moves that contain the consequential half</h2>
       <p>Most agentic risk is contained, not prevented. These cross-cutting moves neutralize the damaging half of nearly every attack even when detection fails.</p>
     </div>
     <div id="recsgrid" class="recs"></div>
@@ -184,7 +184,7 @@
       </div>
       <div class="about-card">
         <h3>Method</h3>
-        <p>Attack vectors were enumerated across thirteen domains, then every candidate incident was adversarially verified against its primary source (CVE record, vendor advisory, or original disclosure) before entering the dataset. Findings were clustered into a canonical taxonomy mapped to an eleven-layer reference architecture grounded in Google SAIF, CSA MAESTRO, and the OWASP Agentic Security Initiative. A second adversarial-review pass surfaced eleven further risks and reconciled the taxonomy, expanding it to 42.</p>
+        <p>Attack vectors were enumerated across thirteen domains, then every candidate incident was adversarially verified against its primary source (CVE record, vendor advisory, or original disclosure) before entering the dataset. Findings were clustered into a canonical taxonomy mapped to an eleven-layer reference architecture grounded in Google SAIF, CSA MAESTRO, and the OWASP Agentic Security Initiative. Two further passes expanded the taxonomy to 50: an adversarial review surfaced eleven cross-cutting risks, and a code-security pass closed the build-time and operational gaps (AI-generated insecure code, secure development lifecycle, patch and vulnerability management, runtime drift detection, and decommissioning) so the framework now runs end-to-end from how an agent is built to how it is retired.</p>
       </div>
       <div class="about-card">
         <h3>Sources &amp; standards</h3>

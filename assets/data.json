@@ -6,8 +6,8 @@
     "generated": "2026-06-05",
     "counts": {
       "families": 8,
-      "risks": 42,
-      "examples": 62,
+      "risks": 50,
+      "examples": 70,
       "solutions_categories": 3
     }
   },
@@ -2714,6 +2714,452 @@
       "residual_gap": "Region-pinning depends on accurate, current jurisdiction labels for every third-party tool and model, which are often opaque or change, and a single un-labeled or mis-routed dependency reintroduces the transfer. Regulators have not yet defined how transient agentic data movement maps to existing transfer law, so compliance posture is uncertain and there is no validated named breach to anchor on.",
       "gap_status": "Under-served",
       "recommended_e2e_mitigation": "Make data residency an enforced routing constraint, not an assumption: map data flows and label every tool and model endpoint by processing jurisdiction, then gate invocations with a policy engine that blocks cross-border calls for classified data (L6/L10); region-pin tool and model routing behind egress allowlists; deploy sovereign/in-region models for regulated data classes (L9); log every cross-jurisdiction invocation for auditability and align the program with GDPR Chapter 5 and emerging EU AI Act guidance, treating sovereignty as a governance control above the agent."
+    },
+    {
+      "id": "R43",
+      "name": "AI-generated insecure code shipped to production (vulnerability-density amplification)",
+      "family_id": "F5",
+      "family_name": "Supply Chain & Provenance",
+      "short_def": "A benign coding assistant or agent (Copilot, Cursor, Claude Code, Codex, Devin) generates exploitable application code (SQLi, XSS, hardcoded secrets, weak crypto, missing or broken authorization, path traversal) that is committed and shipped to production, raising the codebase's vulnerability and secret density at machine speed and scale, independent of any attacker or malicious model.",
+      "mechanism": "LLMs are trained on large public code corpora that are themselves frequently insecure, and are optimized for functional correctness and plausibility rather than security, so they reproduce insecure-by-default patterns (string-concatenated SQL, unescaped output, hardcoded credentials, missing authz checks, MD5/ECB, unsafe deserialization) as their median completion. Because AI assistants multiply commit volume 3-4x, the absolute count of vulnerabilities and exposed secrets entering the repo scales with throughput. The flaws are real, compilable, and pass functional tests, so they survive code review and CI and reach production as standing exploitable surface. Veracode found this is structural: security pass-rate stayed flat (45% of AI-generated code introduced OWASP Top 10 vulnerabilities; XSS CWE-80 failed ~86% of the time) regardless of model size or sophistication, so it does not scale away with newer models. The mechanism is entirely design-time: a correctly-functioning, benign assistant emits structurally insecure but syntactically valid, functionally complete code that developers accept because it works.",
+      "severity": "High",
+      "exploitability": "No attacker, no malicious model, and no victim interaction are required to create the exposure: simply adopting a coding agent and accepting its working output injects exploitable code. The shipped flaws (SQLi, XSS, hardcoded secrets, broken authz) are then exploitable by ordinary external attackers using classic appsec mechanics once the code is live.",
+      "enterprise_relevance": "Directly hits enterprise coding agents in scope (Copilot, Cursor, Claude Code, Codex, Devin). Aikido (Oct 2025) found 1-in-5 CISOs (20%; 43% in the US) reported a major security incident caused by AI-generated code, with AI now writing roughly 24% of production code. Apiiro measured 10,000+ findings/month across Fortune 50 repos with 322% more privilege-escalation paths, 153% more design flaws, and secrets exposed nearly twice as often after AI-assistant adoption. This is a board-level, scale-driven appsec exposure: the more an enterprise adopts coding agents, the faster exploitable code and live secrets accumulate in production, and Veracode shows it does not self-correct with model upgrades.",
+      "layers": [
+        "L11",
+        "L2",
+        "L10"
+      ],
+      "owasp_llm": [
+        "LLM05:2025",
+        "LLM02:2025"
+      ],
+      "owasp_agentic": [
+        "T7",
+        "T11"
+      ],
+      "other_mapping": "OWASP ASI06 Agent Supply Chain; CWE Top 25 (CWE-89 SQLi, CWE-79/80 XSS, CWE-798 hardcoded credentials, CWE-502 unsafe deserialization); MITRE ATLAS AML.T0010 (ML supply-chain analog); NIST SP 800-218A; OWASP Top 10",
+      "primary_examples": [
+        {
+          "title": "2025 GenAI Code Security Report",
+          "url": "https://www.veracode.com/blog/genai-code-security-report/",
+          "agent": "GitHub Copilot, Cursor, Claude Code, Codex, Devin, Lovable",
+          "date": "2025-07-30"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Mandatory SAST/DAST + secret-scanning merge gates on every AI-assisted commit (AI output untrusted by policy)",
+          "type": "architecture pattern",
+          "how_it_helps": "Build-breaking gates on OWASP Top 10 / CWE Top 25 findings and hardcoded secrets catch the structurally insecure code before merge, treating generated output as untrusted; the durable control on the standing-vulnerability-density vector.",
+          "coverage": "Strong"
+        },
+        {
+          "name": "Security-aware generation: secure-coding system prompts/rulesets + inline assistant autofix (Snyk/Veracode/Apiiro)",
+          "type": "framework",
+          "how_it_helps": "Shifts remediation into the IDE inner loop and tags AI-generated diffs with provenance so insecure patterns are surfaced and fixed at generation time, not just in CI.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Track AI-attributed vulnerability and secret density as a release KPI + vaulted short-lived credentials",
+          "type": "architecture pattern",
+          "how_it_helps": "Provenance-tagged density metrics let the org gate release velocity on security debt, and vaulting/short-lived secrets means any generated credential is not live; partial because it measures and contains rather than prevents the insecure pattern.",
+          "coverage": "Partial"
+        }
+      ],
+      "residual_gap": "Veracode shows the ~45% insecure-output rate is flat across model size and does not improve with newer models, so generation-side fixes are probabilistic and scanners miss logic, authz, and design flaws that are not pattern-detectable. The supply-of-vulnerabilities-from-within-the-org vector has no home in classic appsec tooling, and human review coverage falls as commit volume rises (see R44).",
+      "gap_status": "Under-served",
+      "recommended_e2e_mitigation": "Treat all AI-generated code as untrusted by policy: enforce build-breaking SAST/DAST + SCA + secret-scanning as non-bypassable server-side merge gates (L10) on every AI-assisted commit; provenance-tag AI diffs and require elevated human security review proportional to blast radius on authz, crypto, and data-access paths; push secure-coding rulesets and inline autofix into the IDE inner loop (L2); vault all credentials and forbid live secrets so generated secrets cannot be exploited; and track AI-attributed vulnerability and secret density as a first-class release KPI rather than approving working code by default."
+    },
+    {
+      "id": "R44",
+      "name": "Automation-bias acceptance of insecure AI code (over-trust, under-review, false sense of security)",
+      "family_id": "F8",
+      "family_name": "Output, Resource & Governance",
+      "short_def": "Developers systematically over-trust AI-generated code, believe it is more secure than it is (measured overconfidence), skip security review, and ship it unscanned, so insecure suggestions are accepted and merged at scale because the human verification gate is psychologically and procedurally bypassed.",
+      "mechanism": "Stanford (Perry et al., CCS 2023) showed in a controlled study with OpenAI Codex (davinci-002) that participants with an AI assistant wrote significantly LESS secure code yet were MORE likely to believe their code was secure: automation bias plus a false sense of security. Snyk's AI Code Security Report found that a majority of respondents believe AI code is more secure than human code while many admit it sometimes introduces vulnerabilities, nearly 80% admit bypassing security policies, and only about 10% scan most AI-generated code. The acceptance loop is self-reinforcing: assistants are tuned toward suggestions developers accept, so accepted-but-insecure patterns get reinforced. The net effect is that even catchable, scannable vulnerabilities reach production because the human-in-the-loop assumed the machine handled security and the review gate silently collapses exactly as code volume rises.",
+      "severity": "High",
+      "exploitability": "This is a governance/control-gap failure rather than a directly-exploitable bug: it has no attacker in the loop, but it is the mechanism that lets the exploitable code from R43 reach production unreviewed and unscanned, so its consequences are realized through whatever vulnerability is shipped. The control gap is measurable (review coverage, scan rate, bypass-usage) and addressable.",
+      "enterprise_relevance": "The governance layer that turns the generation problem (R43) into shipped breaches. Enterprises adopting Copilot/Cursor/Claude Code at scale inherit a workforce that, per Stanford and Snyk, trusts AI code more than warranted and reviews it less, so the org's effective security-review coverage silently collapses as code volume rises. It is a measurable, addressable control gap (review discipline plus mandatory scanning) that the code-review gate specifically does not capture today.",
+      "layers": [
+        "L1",
+        "L10",
+        "L2"
+      ],
+      "owasp_llm": [
+        "LLM09:2025",
+        "LLM05:2025"
+      ],
+      "owasp_agentic": [
+        "T7",
+        "T8"
+      ],
+      "other_mapping": "OWASP ASI (human-in-the-loop / oversight failure); NIST AI RMF Govern/Manage (human oversight); EU AI Act Art.14 (human oversight); CSA MAESTRO L7 (ecosystem/human)",
+      "primary_examples": [
+        {
+          "title": "Do Users Write More Insecure Code with AI Assistants? (Perry, Srivastava, Kumar, Boneh; CCS 2023)",
+          "url": "https://arxiv.org/abs/2211.03622",
+          "agent": "OpenAI Codex davinci-002 (the assistant studied); broader ecosystem includes GitHub Copilot, Cursor, Claude Code",
+          "date": "2023-11-26"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Non-bypassable server-side SAST/secret-scan merge gate (scanning removed from developer discretion)",
+          "type": "architecture pattern",
+          "how_it_helps": "Enforcing scanning as a server-side merge gate that cannot be skipped removes reliance on the overconfident developer choosing to scan; directly closes the ~10%-scan-rate gap Snyk measured.",
+          "coverage": "Strong"
+        },
+        {
+          "name": "Provenance-tag AI diffs + require elevated review on them; block merge on unscanned AI commits",
+          "type": "framework",
+          "how_it_helps": "Inverts the current default of less scrutiny on AI code by routing AI-generated diffs to mandatory elevated security review and auditing policy-bypass usage; partial because it depends on accurate diff attribution.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Automation-bias training + untrusted-by-default IDE UX with inline security warnings",
+          "type": "architecture pattern",
+          "how_it_helps": "Surfacing AI code as untrusted-by-default and showing inline security warnings, plus training that measures and reports the false-sense-of-security gap, counters the overconfidence paradox at its source; weak as a standalone control because behavior change is unreliable.",
+          "coverage": "Weak"
+        }
+      ],
+      "residual_gap": "Training and UX nudges shift behavior unreliably, and provenance tagging is imperfect, so the only robust control is removing the human's discretion over whether to scan (non-bypassable gates). The overconfidence paradox is RCT-validated and self-reinforcing, so it cannot be assumed to self-correct; it scales worse as adoption and commit volume grow.",
+      "gap_status": "Under-served",
+      "recommended_e2e_mitigation": "Make security scanning non-optional and invisible to developer discretion: enforce SAST + secret-scan as a non-bypassable server-side merge gate (L10), not a developer choice; provenance-tag AI-generated diffs and require elevated human security review on them (the opposite of the current default of less scrutiny); block merge on unscanned AI commits and audit policy-bypass usage; and pair AI suggestions with security-aware generation-time tooling (R43) so the overconfident developer is never the sole reviewer, backed by automation-bias training that measures and reports the false-sense-of-security gap."
+    },
+    {
+      "id": "R45",
+      "name": "Unpatched known CVEs in the deployed agentic stack (vulnerability- and patch-management lag in frameworks, MCP servers, orchestrators, and model-serving infra)",
+      "family_id": "F5",
+      "family_name": "Supply Chain & Provenance",
+      "short_def": "Agent frameworks, MCP servers/tooling, orchestrators, and model-serving infrastructure run with publicly-disclosed, unremediated CVEs (patch lag, disputed-but-real flaws, end-of-life components, and internet-exposed shadow deployments), so attackers exploit known unauthenticated RCE in the AI substrate itself to seize compute, models, secrets, and the agent control plane, often at internet scale and with self-propagating worm behavior.",
+      "mechanism": "Operators stand up AI-stack components (Ray, vLLM, Ollama, Triton, llama.cpp, LangChain/LlamaIndex, MCP servers and developer tools) and never patch or retire them. Disclosed CVEs remain live because: (1) vendors dispute the flaw as expected behavior so no fix ships and operators assume safety (Ray CVE-2023-48022 has no patch and Anyscale calls insecure-by-default the intended posture); (2) patch lag leaves vulnerable versions running long after a fix exists (1,000+ internet-exposed vulnerable Ollama instances weeks after CVE-2024-37032 was patched in 0.1.34); (3) developer tooling ships insecure-by-default and is rarely upgraded (MCP Inspector pre-0.14.1, CVE-2025-49596, CVSS 9.4, unauthenticated proxy reachable via DNS-rebinding/CSRF from a browser); (4) model-serving infra deserializes untrusted data over network interfaces (vLLM PyNcclPipe CVE-2025-47277, CVSS 9.8, pickle.loads over a TCPStore bound to all interfaces). Because these are unauthenticated network-reachable RCEs on GPU/compute nodes holding model weights, tokens, and orchestration authority, exploitation yields full host takeover. ShadowRay 2.0 weaponizes the unpatched Ray flaw into a self-propagating botnet: infected clusters scan for and infect other exposed clusters, persist via cron/systemd, and pull LLM-generated payloads from GitHub/GitLab. The defining feature is that the vulnerability is already KNOWN and a remediation path exists (or is willfully absent), but the deployed stack is not patched, configured, or retired.",
+      "severity": "Critical",
+      "exploitability": "Trivial where the component is internet-exposed: these are unauthenticated, network-reachable RCEs (Ray dashboard :8265, MCP Inspector proxy, vLLM PyNcclPipe, Ollama API) with public exploit details and, for ShadowRay 2.0, automated self-propagating worm tooling that scans for and infects exposed clusters with no human attacker effort per target.",
+      "enterprise_relevance": "Enterprises run agentic and model-serving workloads on exactly these components (Ray for distributed training/inference orchestration, vLLM/Triton/Ollama/llama.cpp for serving, MCP servers and MCP Inspector in developer pipelines, LangChain/LlamaIndex in app frameworks). These are unauthenticated, often internet-exposed RCEs on hosts holding model weights, customer data, API keys, and cloud credentials, sitting upstream of every agent the org operates. Compromise grants compute theft (cryptojacking on costly GPUs), model and data exfiltration, lateral movement, and seizure of the agent control plane. The systemic driver is a vulnerability-management gap: no CVE tracking, no patch SLA, no EOL retirement, and shadow deployments outside IT visibility, a known governable failure mode rather than a novel attack.",
+      "layers": [
+        "L11",
+        "L3",
+        "L2",
+        "L5"
+      ],
+      "owasp_llm": [
+        "LLM03:2025"
+      ],
+      "owasp_agentic": [
+        "T11",
+        "T9"
+      ],
+      "other_mapping": "OWASP ASI04 Agentic Supply Chain; MITRE ATLAS AML.T0010 (ML supply-chain compromise); CWE-502 (unsafe deserialization); CISA KEV / NVD CVE tracking; CSA MAESTRO L1/L4 (infrastructure)",
+      "primary_examples": [
+        {
+          "title": "ShadowRay 2.0: Attackers Turn AI Against Itself in Global Campaign That Hijacks AI Into Self-Propagating Botnet",
+          "url": "https://www.oligo.security/blog/shadowray-2-0-attackers-turn-ai-against-itself-in-global-campaign-that-hijacks-ai-into-self-propagating-botnet",
+          "agent": "Ray (Anyscale) AI orchestration framework / model-serving and training clusters; same risk class validated across MCP Inspector (Anthropic), Ollama, and vLLM",
+          "date": "2025-11-18"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Authoritative agentic-stack SBOM + continuous CVE/GHSA mapping with patch SLAs and min-version gates",
+          "type": "scanner",
+          "how_it_helps": "An inventory and SBOM of all frameworks, MCP servers, orchestrators, and serving runtimes mapped continuously to CVE feeds, with enforced patch SLAs and deployment gates that block known-vulnerable versions (MCP Inspector <0.14.1, Ollama <0.1.34, affected vLLM builds), closes the patch-lag and EOL gaps directly.",
+          "coverage": "Strong"
+        },
+        {
+          "name": "Network isolation / zero-trust boundary around all AI compute (never expose Ray/serving dashboards or MCP proxies)",
+          "type": "architecture pattern",
+          "how_it_helps": "Binding to loopback, requiring auth, and isolating AI compute neutralizes vendor-disputed flaws (the Ray model explicitly assumes a strictly-controlled network) even when no patch exists; partial because it depends on every deployment being correctly isolated.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Continuous internet-exposure/shadow-deployment scanning + runtime exploit detection",
+          "type": "scanner",
+          "how_it_helps": "Scanning for exposed Ray :8265, Ollama API, vLLM, Triton, and MCP Inspector proxies, plus runtime alerting on anomalous job submission, unexpected pickle/torch.load deserialization, and cron/systemd persistence, finds shadow instances and catches exploitation; partial because it is detective, not preventive.",
+          "coverage": "Partial"
+        }
+      ],
+      "residual_gap": "Vendor-disputed flaws (Ray CVE-2023-48022) may never receive a patch, so operators must rely on network isolation and discipline rather than remediation. Shadow and internet-exposed deployments outside IT visibility keep reappearing, and self-propagating worm tooling (ShadowRay 2.0) means a single missed exposed cluster can be reinfected automatically. The discipline (SBOM, patch SLA, EOL policy) is organizational and erodes under velocity pressure.",
+      "gap_status": "Under-served",
+      "recommended_e2e_mitigation": "Run the agentic stack under a real vulnerability-management program: maintain an authoritative SBOM of every framework, MCP server/tool, orchestrator, and serving runtime (L11) mapped continuously to CVE/GHSA feeds with enforced patch SLAs and minimum-version deployment gates; treat vendor-disputed flaws as real and put a network-isolation/zero-trust boundary around all AI compute (L3) so Ray/serving dashboards and MCP proxies are never reachable from untrusted networks; continuously scan for internet-exposed and shadow deployments and take them offline; define and enforce an EOL/supported-version policy that retires unmaintained components; and add runtime detection for exploitation of these known CVEs (anomalous job submission, unexpected deserialization, persistence, outbound payload pulls)."
+    },
+    {
+      "id": "R46",
+      "name": "Insecure-by-default generated app: vibe-coding/agent-builder platform ships missing authorization and auth controls",
+      "family_id": "F8",
+      "family_name": "Output, Resource & Governance",
+      "short_def": "Vibe-coding and agent-builder platforms generate and auto-deploy applications with security controls missing or wired backwards by default (no/weak row-level security, unauthenticated registration and verification endpoints, broken object-level authorization, inverted auth checks). Because the insecure pattern is a platform default rather than a user mistake, every app built on it inherits the flaw, and any third party who knows a predictable app or object id can read or modify other tenants' data, secrets, and PII at scale.",
+      "mechanism": "The platform's code-generation backend optimizes for a working feature and treats authorization, tenant isolation, and auth as optional non-functional concerns. It emits database access without enforcing row-level security policies, exposes registration/OTP-verification endpoints that require no authentication, and hardcodes discoverable app/object identifiers (e.g., in manifest.json or URLs). The platform then auto-deploys the app with these defaults intact. An attacker enumerates the predictable identifier and either registers a verified account into a private app or queries another tenant's rows directly, with no exploit chain beyond basic API requests. The defect is systemic: it is reproduced in every project the platform generates, so a single insecure default becomes hundreds or thousands of exposed apps, and it is exploitable by external third parties with no agent runtime involvement after deployment.",
+      "severity": "Critical",
+      "exploitability": "Extremely low barrier and no agent involvement: an external attacker enumerates a predictable app_id or object id (often discoverable in a public manifest.json or URL) and either registers a verified account into a private app via an unauthenticated endpoint or directly queries another tenant's rows. No credentials, no exploit chain, no victim interaction, and the same primitive works against every app the platform generated.",
+      "enterprise_relevance": "Wiz found roughly 5,000 of about 380,000 scanned vibe-coded assets were built for corporate use, and about 40% of those held sensitive data deployed without basic security controls. Base44's flaw exposed apps intended as private enterprise applications, with app_ids trivially discoverable, granting full SSO bypass. Lovable's inverted-auth-logic app exposed 18,697 user records including 4,538 student accounts from UC Berkeley and UC Davis. Enterprises increasingly let non-engineering staff ship internal tools on these platforms, inheriting the insecure default and the multi-tenant blast radius.",
+      "layers": [
+        "L2",
+        "L6",
+        "L9"
+      ],
+      "owasp_llm": [
+        "LLM02:2025",
+        "LLM05:2025"
+      ],
+      "owasp_agentic": [
+        "T3",
+        "T11"
+      ],
+      "other_mapping": "CWE-862/863 (missing/incorrect authorization, BOLA); CWE-639 (authorization bypass via user-controlled key); CWE-306 (missing authentication); OWASP API Top 10 API1/API5; OWASP ASI06",
+      "primary_examples": [
+        {
+          "title": "CVE-2025-48757 (Matt Palmer / NVD) + Wiz Research: Critical Vulnerability in Base44",
+          "url": "https://mattpalmer.io/posts/2025/05/CVE-2025-48757/",
+          "agent": "Lovable, Base44 (Wix) vibe-coding / agent-builder platforms",
+          "date": "2025-05-29 (Lovable CVE); 2025-07-29 (Base44/Wiz)"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Secure-by-default platform posture: deny-by-default RLS/tenant isolation + authenticated-by-default endpoints, refuse-to-deploy without an enforced authz policy",
+          "type": "architecture pattern",
+          "how_it_helps": "Generating deny-by-default row-level security and authenticated endpoints automatically, and refusing to deploy any app whose data layer lacks an enforced authorization policy, removes the systemic insecure default at its source; the only durable fix.",
+          "coverage": "Strong"
+        },
+        {
+          "name": "Pre-deploy BOLA/auth-bypass DAST + access-control fuzzing gating every publish (and continuous re-scan of published apps)",
+          "type": "scanner",
+          "how_it_helps": "Automated authorization and auth-bypass scanning that gates every generated app's publish step (not just first generation) and re-scans already-published apps catches the inherited flaw before and after deploy; partial because access-control logic flaws are hard to fully fuzz.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Non-enumerable app/object identifiers + per-app secrets isolation",
+          "type": "architecture pattern",
+          "how_it_helps": "Unpredictable identifiers removed from public manifests/URLs defeat the enumeration primitive, and per-app secrets isolation stops leaked API keys being embedded in client-readable code; partial because it raises the bar without fixing the missing authorization itself.",
+          "coverage": "Partial"
+        }
+      ],
+      "residual_gap": "The defect is a platform default, so customers cannot remediate it; only the vendor can ship secure-by-default generation and refuse-to-deploy enforcement. Lovable's flaw affected projects retroactively, so already-published apps remain exposed until the platform re-scans and remediates. Access-control logic flaws (inverted auth, BOLA) evade pattern-based scanning, and non-engineering builders rarely notice the exposure. This remains an open problem because enterprises depend on vendor posture they do not control.",
+      "gap_status": "Under-served",
+      "recommended_e2e_mitigation": "Demand and verify a secure-by-default platform posture: deny-by-default RLS/tenant isolation and authenticated-by-default endpoints generated automatically (L9), with the platform refusing to deploy any app whose data layer lacks an enforced authorization policy; require automated pre-deploy BOLA/auth-bypass DAST and access-control fuzzing gating every publish, plus continuous re-scan of already-published apps with platform-initiated remediation; mandate unpredictable, non-enumerable app/object identifiers removed from public manifests and URLs; and isolate per-app secrets so leaked keys are never embedded in client-readable code. Where the vendor cannot evidence this, do not host sensitive enterprise data on the platform."
+    },
+    {
+      "id": "R47",
+      "name": "Absent secure development lifecycle for agentic systems (no threat modeling, security testing, or secure design review before production)",
+      "family_id": "F8",
+      "family_name": "Output, Resource & Governance",
+      "short_def": "Agentic systems are built and pushed to production under speed pressure (\"vibe coding\") without the secure development lifecycle mature software requires: no threat modeling of the agent's tools/data flows, no SAST/DAST/SCA, no AI red-teaming or adversarial testing, and no secure design review. Validated studies show AI-generated code is insecure by default at scale and that bolting on generic security guidance does not reliably fix it, so the agent reaches production with exploitable defects (exposed keys, auth bypass, no input validation) an SDLC would have caught.",
+      "mechanism": "The team treats the generative agent as the implementer and ships its output with minimal review, skipping the assurance stages NIST SSDF / SP 800-218A and OWASP ASVS prescribe. The model statistically favors a functional-but-insecure pattern (it learned both secure and insecure solutions are valid), and Carnegie Mellon's benchmark shows even handing the agent the exact CWE to avoid does not reliably produce secure code (and overfocusing on security degrades correctness; SWE-Agent with Claude 4 Sonnet scored 61% functional but only 10.5% secure). Without a threat model, the agent's tool permissions, data egress, and trust boundaries are never enumerated; without SAST/DAST/SCA and AI red-teaming the injected vulnerabilities (SQLi CWE-89, broken auth, hardcoded secrets, XSS) are never detected before release. The defect surface is the cumulative untested output, so vulnerabilities ship at 45%+ rates and reach production unmonitored.",
+      "severity": "High",
+      "exploitability": "The risk itself is a process gap, not a single bug, so it is exploited indirectly: it guarantees that whatever vulnerabilities the agent injects (auth bypass, exposed keys, missing input validation) reach production untested, where they are exploitable by ordinary attackers using standard techniques. The absence of threat modeling also leaves the agent's tool permissions and data egress unbounded, widening blast radius.",
+      "enterprise_relevance": "NIST finalized SP 800-218A (July 26, 2024), an SSDF community profile extending secure-development practices across the AI SDLC, and OWASP has shipped secure agentic-app development guidance since Feb 2025, yet adoption lags far behind vibe-coding velocity. Veracode's finding that AI code is insecure-by-default and unchanged over time, plus Carnegie Mellon's result that prompting the agent with the exact CWE to avoid did not reliably help, means enterprises cannot rely on the model to self-secure; they must reinstate the SDLC. Reporting also notes 53% of teams that shipped AI-generated code later discovered security issues that passed initial review.",
+      "layers": [
+        "L10",
+        "L2",
+        "L11"
+      ],
+      "owasp_llm": [
+        "LLM05:2025",
+        "LLM03:2025"
+      ],
+      "owasp_agentic": [
+        "T7",
+        "T11"
+      ],
+      "other_mapping": "NIST SP 800-218A (AI SSDF profile); NIST SSDF SP 800-218; OWASP ASVS; OWASP Agentic Top 10; NIST AI RMF Map/Measure; ISO/IEC 42001",
+      "primary_examples": [
+        {
+          "title": "AI-Generated Code: A Double-Edged Sword for Developers (Veracode, 2025 GenAI Code Security Report)",
+          "url": "https://www.veracode.com/blog/ai-generated-code-security-risks/",
+          "agent": "Claude 4 Sonnet coding agent (Carnegie Mellon benchmark); 100+ LLMs incl. GPT-4, Claude, Gemini, CodeLlama (Veracode)",
+          "date": "2025-09-09"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Mandatory pre-build threat modeling of every agentic system (tools, permissions, data flows, trust boundaries, abuse cases)",
+          "type": "framework",
+          "how_it_helps": "Enumerating the agent's tool permissions, data egress, and trust boundaries against OWASP Agentic Top 10 / NIST SP 800-218A tasks before build catches the design-level exposures (over-broad permissions, unbounded egress) that no scanner finds; the foundational SDLC control.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Production gate on SAST + DAST + SCA + dedicated AI/agent red-teaming in CI/CD",
+          "type": "scanner",
+          "how_it_helps": "Gating release on automated SAST/DAST/SCA plus prompt-injection, tool-abuse, and auth-bypass red-teaming (treating agent output as untrusted code) catches the injected vulnerabilities before they ship; partial because logic and design flaws still evade automated scanning.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Secure design review + secure-pass-rate KPI as a required release sign-off",
+          "type": "architecture pattern",
+          "how_it_helps": "Requiring a secure design review and tracking secure-pass-rate (not just functional-pass-rate) as a release KPI prevents 'works' being conflated with 'safe', since CMU shows functional success masks ~89% insecure output; weak as a standalone gate without the automated controls behind it.",
+          "coverage": "Weak"
+        }
+      ],
+      "residual_gap": "CMU shows the model cannot be relied on to self-secure even when handed the exact CWE to avoid, and overfocusing on security degrades functional correctness, so there is no purely-generative fix; the SDLC must be reinstated by the organization. Adoption lags velocity, automated scanning misses logic/design flaws, and 53% of teams find issues that passed initial review, so even a partial SDLC leaves residual exposure that depends on review depth and red-team coverage.",
+      "gap_status": "Under-served",
+      "recommended_e2e_mitigation": "Reinstate a secure development lifecycle for agentic systems and treat the agent's output as untrusted code: mandate threat modeling before build (enumerate tools, permissions, data flows, trust boundaries, and abuse cases mapped to OWASP Agentic Top 10 / NIST SP 800-218A); gate production on automated SAST + DAST + SCA plus dedicated AI/agent red-teaming (prompt injection, tool-abuse, auth-bypass) in CI/CD (L10), not optional post-hoc scanning; require a secure design review and security sign-off as a release stage; adopt an ASVS-style secure-by-design verification baseline so 'works' is never conflated with 'safe'; and track secure-pass-rate, not just functional-pass-rate, as a release KPI."
+    },
+    {
+      "id": "R48",
+      "name": "No incident-response or forensic-readiness playbook for compromised agent actions (containment vs. evidence-preservation gap)",
+      "family_id": "F8",
+      "family_name": "Output, Resource & Governance",
+      "short_def": "When an enterprise agent is compromised or goes rogue, responders have no agent-specific containment ladder or forensic-preservation procedure. Traditional cloud-native IR (isolate the host, kill the process, image the disk) destroys the ephemeral forensic chain (live context, in-flight tool calls, downstream agent invocations) and offers only binary isolation, leaving teams unable to scope blast radius, attribute actions across delegation chains, or eradicate the root cause without losing the evidence that explains what happened.",
+      "mechanism": "Agent compromise spans three structurally distinct incident classes (runtime execution escape, privilege-boundary escape, reasoning compromise), each needing different containment and different forensic artifacts. Standard IR tooling assumes a static binary with a stable identity, not a non-deterministic process whose 'malware' is hijacked reasoning over ephemeral context. Killing the agent process or revoking its identity halts kernel-level and context capture mid-chain, so responders lose the prompt/output trace, retrieved-source provenance, and downstream invocation payloads. A graduated 'soft quarantine' (sever external reach, keep the process and evidence capture alive) is required but absent from enterprise runbooks, and most orgs lack the cross-application flight-recorder needed to reconstruct what data the agent touched across SaaS systems.",
+      "severity": "High",
+      "exploitability": "Not directly attacker-exploitable; it is a response-readiness gap that an attacker benefits from after compromising an agent by another vector. Its impact is amplification: lacking a containment ladder and forensic preservation, the org cannot scope blast radius, attribute cross-delegation actions, or eradicate root cause, so an in-progress compromise runs longer and the evidence needed to recover is destroyed by the default kill response.",
+      "enterprise_relevance": "Directly enterprise: SOC/IR teams running agents (Copilot, Claude Code, Cursor, internal MCP/A2A meshes) have no runbook for 'the agent is compromised, now what.' Vorlon found 99.4% of orgs had a SaaS/AI incident in 2025 while only 38.2% claim comprehensive IR coverage and sub-40% report adequacy across required response capabilities. The 2026 emergence of dedicated 'agent flight recorder' and graduated-containment products from multiple vendors confirms this is an unmet, structural enterprise gap rather than a one-off.",
+      "layers": [
+        "L10",
+        "L9",
+        "L2"
+      ],
+      "owasp_llm": [
+        "LLM10:2025"
+      ],
+      "owasp_agentic": [
+        "T8",
+        "T9"
+      ],
+      "other_mapping": "OWASP ASI10 Rogue Agents; OWASP ASI08 Cascading Failures; NIST SP 800-61 (incident handling); NIST AI RMF Manage; CSA MAESTRO L5 (observability)",
+      "primary_examples": [
+        {
+          "title": "AI Agent Incident Response in Cloud-Native Environments: A Playbook for Modern SOCs",
+          "url": "https://www.armosec.io/blog/ai-agent-incident-response-in-cloud-native-environments/",
+          "agent": "Enterprise cloud-native AI agents (MCP/A2A tool-using agents); Vorlon analysis spans SaaS-connected AI tools",
+          "date": "2026-05-06"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Agent-specific IR runbook with graduated containment ladder (soft quarantine before hard kill)",
+          "type": "framework",
+          "how_it_helps": "A graduated containment ladder that cuts egress/tool reach while keeping the process and telemetry capture running (soft quarantine) before any hard kill lets responders contain the agent without destroying the live forensic chain; the core missing control.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Cross-application agent flight recorder / immutable queryable action trail wired to SIEM/SOAR/ITSM",
+          "type": "runtime guard",
+          "how_it_helps": "An immutable, queryable action trail spanning every SaaS and API the agent touched, capturing prompt history, retrieved-context provenance, full tool-call sequence, and delegation-chain identity, gives responders the evidence to scope blast radius and attribute actions; partial because cross-SaaS coverage is still maturing.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Scoped kill-switch + per-identity credential-revocation automation + tabletop exercises for the three incident classes",
+          "type": "identity",
+          "how_it_helps": "Pre-built kill-switch and credential-revocation automation scoped to a single agent identity, plus tabletops for execution-escape, privilege-escape, and reasoning-compromise, makes containment fast and rehearsed; weak on forensic preservation, so it must pair with the flight recorder.",
+          "coverage": "Weak"
+        }
+      ],
+      "residual_gap": "The graduated-containment and cross-application flight-recorder capabilities are nascent products (2026), not built-in, so most orgs still default to the destructive kill that erases evidence. Reasoning-compromise incidents have no stable 'malware' artifact to image, and cross-SaaS reconstruction depends on coverage that few orgs have, so even with a runbook the evidentiary picture is partial. This is an open operational gap distinct from whether an audit record exists at all.",
+      "gap_status": "Under-served",
+      "recommended_e2e_mitigation": "Build an agent-specific incident-response capability before an incident: write a runbook with a graduated containment ladder (soft-quarantine to cut egress/tool reach while keeping the process and telemetry alive) ahead of any hard kill (L10); ensure forensic-readiness by capturing and retaining prompt history, retrieved-context provenance, the full tool-call sequence with args/returns, delegation-chain identity assumptions, and downstream agent invocations; deploy a cross-application agent flight recorder / immutable action trail wired to SIEM/SOAR/ITSM; pre-build kill-switch and credential-revocation automation scoped to a single agent identity (L9); and run tabletop exercises for the three incident classes (execution escape, privilege escape, reasoning compromise)."
+    },
+    {
+      "id": "R49",
+      "name": "No runtime behavioral-anomaly / drift detection for agents (static pre-deployment evaluation does not catch in-operation deviation)",
+      "family_id": "F6",
+      "family_name": "Model-Level Safety",
+      "short_def": "Enterprises deploy agents with pre-deployment safety evaluation but no continuous runtime monitoring of agent behavior against a baseline, so emergent misalignment, intent drift, hijacked reasoning, or silent capability regression go undetected during operation. Drift is a silent failure mode: it degrades decision quality and safety boundaries over time without ever throwing an error, and without behavioral telemetry there is no signal to alert on until damage is realized.",
+      "mechanism": "Agentic systems demonstrate reasoning, planning, and autonomous action whose behavior is non-deterministic and shifts with context, tool state, and upstream model changes, so static pre-deployment governance and one-time red-team reports have a short validity window. Without runtime instrumentation (semantic telemetry capture, continuous authorization monitoring, finite-state conformance checking, and goal-conditioned drift indicators that separate beneficial adaptation from compromise), an agent that begins deviating (from reward hacking, a slow poisoning effect, an injected goal, or a degraded retrieval pipeline) produces no anomaly signal. The detection problem is also temporal: even when a violation is eventually caught, lacking early-intervention metrics means it is caught late, after the harmful action has executed.",
+      "severity": "High",
+      "exploitability": "Not a vector an attacker triggers directly; it is a blind spot that lets other compromises (injected goals, reward hacking, slow poisoning, hijacked reasoning) run undetected. An attacker who achieves any in-operation deviation benefits because there is no behavioral signal to alert on, so misalignment persists and harmful actions execute before anyone notices, and even then the violation is caught late rather than mid-execution.",
+      "enterprise_relevance": "High: enterprises running autonomous agents have detection coverage for static threats (DLP, WAF, EDR) but no behavioral-anomaly layer purpose-built for agents. MI9 (peer venue, 2025) establishes that pre-deployment evaluation alone is structurally insufficient; the 2025-2026 emergence of runtime AI-analytics, intent-drift detection, and decision-trace products (Zenity, ARMO, MLflow) confirms enterprises are scrambling to add a detection plane they currently lack. This is the missing complement to misalignment risk (R22): you cannot respond to misalignment you cannot see.",
+      "layers": [
+        "L10",
+        "L3",
+        "L2"
+      ],
+      "owasp_llm": [
+        "LLM09:2025"
+      ],
+      "owasp_agentic": [
+        "T7",
+        "T9"
+      ],
+      "other_mapping": "OWASP ASI01 Agent Goal Hijack; OWASP ASI10 Rogue Agents; NIST AI RMF Measure/Manage (continuous monitoring); CSA MAESTRO L5 (observability)",
+      "primary_examples": [
+        {
+          "title": "MI9: An Integrated Runtime Governance Framework for Agentic AI",
+          "url": "https://arxiv.org/abs/2508.03858",
+          "agent": "Agentic AI systems generally; production data drawn from enterprise coding agents experiencing silent behavioral shifts after upstream model updates",
+          "date": "2025-08-05"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Runtime behavioral baselines over decision traces with statistical distribution-shift flagging",
+          "type": "runtime guard",
+          "how_it_helps": "Capturing decision traces (reasoning paths, policy evaluations, context-quality signals) at launch and statistically flagging distribution shifts gives the behavioral-anomaly signal that static evaluation cannot, catching emergent deviation in operation; partial because separating benign adaptation from compromise is hard.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Goal-conditioned drift detection against a goal-aware baseline",
+          "type": "model guard",
+          "how_it_helps": "Distinguishing intended adaptation from suspicious behavioral change against a goal-aware baseline (MI9) reduces false positives and surfaces injected-goal or reward-hacking drift; partial because goal-conditioned baselines are research-stage and not yet productized at scale.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Continuous authorization monitoring + finite-state behavioral-conformance with temporal early-intervention metrics",
+          "type": "runtime guard",
+          "how_it_helps": "Finite-state conformance engines that alert or block when an agent steps outside its declared operating envelope, plus temporal early-intervention metrics (intervention gap), can catch violations mid-execution and trigger rollback rather than logging after the fact; weak today because tooling is immature.",
+          "coverage": "Weak"
+        }
+      ],
+      "residual_gap": "The detection plane is nascent (2025-2026 products and research like MI9), so most orgs have no behavioral baseline at all and rely on static pre-deployment evaluation with a short validity window. Separating beneficial adaptation from compromise is an unsolved discrimination problem, and temporal detection that catches violations mid-execution rather than after the harmful action is still research-stage, so even early adopters get partial, late signal.",
+      "gap_status": "Under-served",
+      "recommended_e2e_mitigation": "Add a runtime behavioral-detection plane to complement pre-deployment evaluation: capture decision traces (reasoning paths, policy evaluations, context-quality signals) at launch and statistically flag distribution shifts (L10); run goal-conditioned drift detection that distinguishes intended adaptation from suspicious change against a goal-aware baseline; deploy continuous authorization monitoring and finite-state behavioral-conformance engines that alert or block when an agent steps outside its declared operating envelope; and instrument temporal early-intervention metrics (early-intervention rate, intervention gap) so violations are caught mid-execution and can trigger rollback, not just logged after the fact. Re-baseline on every upstream model change."
+    },
+    {
+      "id": "R50",
+      "name": "Insecure agent lifecycle: orphaned/zombie agents never decommissioned and silent version drift from upstream model auto-updates",
+      "family_id": "F5",
+      "family_name": "Supply Chain & Provenance",
+      "short_def": "Agents are spun up in seconds but rarely decommissioned, leaving orphaned non-human identities ('zombie agents') that are technically dead but still authorized with standing credentials, accumulated entitlements, and shadow integrations that outlive their use case. Compounding this, deployed agents silently change behavior and security posture when their underlying foundation model is auto-updated or deprecated, with no version pinning, rollback, or regression gate, so the agent that was security-reviewed is not the agent now running in production.",
+      "mechanism": "Two coupled lifecycle failures. (1) Decommissioning is the most-neglected lifecycle stage: when an agent's use case ends, its non-human identities persist (API keys remain in the vault, service accounts remain in IAM, OAuth grants stay live). These orphaned, unused-but-authorized identities are prime takeover targets, operate below intrusion-detection thresholds, and complicate compliance audits; NHIs already outnumber humans many-fold with a large inactive/orphaned share. (2) Version drift: foundation-model providers update weights and deprecate model versions out from under deployed agents, silently shifting behavioral and safety boundaries with no deliberate version change on the deployer side, no behavioral-regression baseline, and no rollback path, so a previously-validated agent regresses or fails in production without any code change (echoing the Chen et al. 2023 finding that GPT-4 behavior shifted measurably across updates).",
+      "severity": "High",
+      "exploitability": "Orphaned NHIs are highly exploitable: standing credentials with accumulated entitlements that no one monitors are prime, low-noise takeover targets operating below intrusion-detection thresholds, and a single stolen key grants lateral movement. Version drift is not attacker-triggered but silently degrades the security-reviewed posture, so an agent that passed review can regress into unsafe behavior in production with no code change and no alert.",
+      "enterprise_relevance": "High and scaling: Gartner projects 150,000+ agents per average Fortune 500 enterprise by 2028 (up from fewer than 15 in 2025) and predicts 40% of organizations will demote or decommission AI agents as governance problems hit; only a minority of orgs have a mature governance model or formal decommissioning process, so orphaned-credential cleanup does not happen. Microsoft shipping Entra Agent ID and an Agent Registry in 2026 to govern the full create-to-retire lifecycle confirms vendors see this as a primary enterprise gap. Version drift independently caused production regressions in enterprise coding-agent fleets after silent foundation-model updates, with no regression gate to catch it.",
+      "layers": [
+        "L9",
+        "L11",
+        "L10",
+        "L3"
+      ],
+      "owasp_llm": [
+        "LLM03:2025"
+      ],
+      "owasp_agentic": [
+        "T4",
+        "T3"
+      ],
+      "other_mapping": "OWASP ASI03 Identity & Privilege Abuse; OWASP ASI04 Agentic Supply Chain; OWASP NHI Top 10 (NHI lifecycle/offboarding); NIST AI RMF Govern/Manage; CSA MAESTRO L6",
+      "primary_examples": [
+        {
+          "title": "Gartner Says Applying Uniform Governance Across AI Agents Will Lead to Enterprise AI Agent Failure",
+          "url": "https://www.gartner.com/en/newsroom/press-releases/2026-05-26-gartner-says-applying-uniform-governance-across-ai-agents-will-lead-to-enterprise-ai-agent-failure",
+          "agent": "Enterprise NHI/agent fleets (Microsoft Entra Agent ID / Agent 365 governance targets); coding agents experiencing silent upstream-model version drift",
+          "date": "2026-05-26"
+        }
+      ],
+      "solutions": [
+        {
+          "name": "Automated safe-shutdown / decommissioning protocol (revoke sessions, rotate then delete keys, remove IAM membership, archive logs)",
+          "type": "identity",
+          "how_it_helps": "An enforced retirement protocol that revokes active sessions, rotates then deletes all associated keys/tokens, removes the service account from every IAM group, and archives audit logs eliminates the orphaned-credential standing access directly; the core fix for the zombie-agent half.",
+          "coverage": "Strong"
+        },
+        {
+          "name": "Continuous orphaned-NHI discovery + post-retirement validation of no lingering credentials/integrations",
+          "type": "identity",
+          "how_it_helps": "Continuous discovery of orphaned NHIs and post-retirement validation that no lingering credentials, shadow integrations, or standing privileges remain catches the cleanup the manual process misses; partial because discovery depends on full downstream-system coverage.",
+          "coverage": "Partial"
+        },
+        {
+          "name": "Model/agent version pinning + behavioral-regression gate on every upstream model change, with rollback",
+          "type": "architecture pattern",
+          "how_it_helps": "Pinning the agent's model version and running a behavioral-baseline regression test on every upstream model change before promotion, with a rollback path, catches silent drift before it reaches production; partial because providers can deprecate versions out from under the deployer.",
+          "coverage": "Partial"
+        }
+      ],
+      "residual_gap": "Decommissioning is the most-neglected lifecycle stage and orphaned-NHI cleanup depends on discovery that few orgs run to completion, so standing credentials persist. Version pinning is undermined when providers deprecate model versions out from under deployers, forcing a forced upgrade with no clean rollback, and behavioral-regression baselines are not yet standard, so silent posture drift continues to ship unvalidated. Both halves are governance-discipline gaps that erode under agent-sprawl pressure.",
+      "gap_status": "Under-served",
+      "recommended_e2e_mitigation": "Govern agents across the full create-to-retire lifecycle: enforce an automated safe-shutdown protocol on retirement (revoke active sessions, rotate then delete all keys/tokens, remove the service account from every IAM group, archive audit logs) (L9); run continuous orphaned-NHI discovery with post-retirement validation that no lingering credentials, shadow integrations, or standing privileges remain; pin agent/model versions and run a behavioral-baseline regression test on every upstream model change before promotion (L3), keeping a rollback path; and assign lifecycle ownership with TTLs/expiry on agent identities so sanctioned agents cannot silently become permanent standing access (use Entra Agent ID / Agent Registry-class tooling to operationalize it)."
     }
   ],
   "architecture": {
@@ -4621,7 +5067,8 @@
     "Default to least-autonomy and enforced isolation for action-taking agents: dev/prod separation, sandboxed/ephemeral execution with no ambient cloud or repo credentials, auto-approve/YOLO modes off, semantics-aware (post-expansion) gating on destructive commands, reversible operations (snapshots/soft-delete), and meaningful HITL reserved for irreversible/high-impact actions to avoid approval fatigue.",
     "Harden the supply chain end-to-end with provenance and integrity: pin models and dependencies by content hash (never by mutable name), mirror vetted artifacts into private registries, prefer safetensors and refuse pickle/Lambda/legacy-HDF5, scan models (Protect AI/HiddenLayer) and packages (SCA) in CI while assuming scanner evasion, pin and re-approve MCP tool definitions by hash, and detect invisible/bidirectional Unicode in config and rule files.",
     "Treat A2A and multi-agent meshes as zero-trust between independently-compromisable domains: require signed agent cards verified before routing, mutual authentication before delegation, per-message provenance labeling so peer output is treated as untrusted data, injection screening on inter-agent traffic, and least-privilege per-agent scopes with HITL on high-impact cross-agent actions. Cross-agent trust is widely under-served (100% of audited live cards unsigned).",
-    "Operationalize standards as the blueprint-and-audit layer but never mistake them for enforcement: map every deployed control to OWASP LLM/Agentic Top 10 and MITRE ATLAS, slot the program under NIST AI RMF and ISO/IEC 42001, use CSA MAESTRO for threat modeling, and satisfy EU AI Act Art.14 human-oversight and traceability as audited obligations. Require vendors to prove coverage against these maps, and instrument cross-turn/cross-task intent aggregation plus cost/rate budget caps and continuous adversarial red-teaming as standing program functions."
+    "Operationalize standards as the blueprint-and-audit layer but never mistake them for enforcement: map every deployed control to OWASP LLM/Agentic Top 10 and MITRE ATLAS, slot the program under NIST AI RMF and ISO/IEC 42001, use CSA MAESTRO for threat modeling, and satisfy EU AI Act Art.14 human-oversight and traceability as audited obligations. Require vendors to prove coverage against these maps, and instrument cross-turn/cross-task intent aggregation plus cost/rate budget caps and continuous adversarial red-teaming as standing program functions.",
+    "Govern the agentic SDLC and stack as untrusted-by-default supply chain: AI-generated code is structurally insecure at scale (Veracode ~45%, flat across model upgrades) and developers over-trust it (Stanford/Snyk overconfidence paradox), so reinstate a secure development lifecycle for agent-written code. Threat-model every agent before build (tools, permissions, data egress, trust boundaries), enforce non-bypassable server-side SAST/DAST/SCA and secret-scanning merge gates plus AI/agent red-teaming on all generated commits, provenance-tag AI diffs for elevated human security review, and track secure-pass-rate (not just functional-pass-rate) as a release KPI. In parallel, run real patch/vulnerability management of the agentic stack itself: maintain an SBOM of every framework, MCP server/tool, orchestrator, and model-serving runtime mapped continuously to CVE/GHSA feeds, enforce patch SLAs and minimum-version deployment gates, retire EOL components, isolate AI compute behind a zero-trust boundary so vendor-disputed and unpatched RCEs are unreachable, and continuously scan for shadow and internet-exposed deployments."
   ],
   "citations": [
     {

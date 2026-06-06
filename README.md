@@ -9,7 +9,7 @@ AI agents are not a new application bolted onto old infrastructure. They are a n
 ## What is here
 
 - **An interactive threat map.** A clickable model of the eleven-layer enterprise agent deployment. Click any layer to see the surfaces it exposes, the validated incidents that hit it, the controls that help, and where coverage runs out.
-- **A risk taxonomy explorer.** All 31 canonical risks across 8 families, each mapped to the deployment layers it touches, the OWASP LLM and OWASP Agentic threat IDs, a validated real-world example, and an honest gap call. Filter by family, severity, or coverage.
+- **A risk taxonomy explorer.** All 50 canonical risks across 8 families, each mapped to the deployment layers it touches, the OWASP LLM and OWASP Agentic threat IDs, a validated real-world example, and an honest gap call. Filter by family, severity, or coverage.
 - **A risk-to-solution mapping.** Every risk against its strongest controls, with an explicit coverage gap for each.
 - **A two-part whitepaper** (read online, also in `/whitepaper` as Word documents):
   - Part 1: how agents are deployed and where they get attacked.
@@ -19,16 +19,16 @@ AI agents are not a new application bolted onto old infrastructure. They are a n
 
 | Metric | Value |
 | --- | --- |
-| Canonical risks | 42, across 8 families |
+| Canonical risks | 50, across 8 families |
 | Deployment layers | 11, with 7 trust boundaries |
-| Validated real-world incidents | 62, every one verified against a primary source |
-| Risks under-served or open | 28 (24 under-served, 4 open problems) |
+| Validated real-world incidents | 70, every one verified against a primary source |
+| Risks under-served or open | 36 (32 under-served, 4 open problems) |
 
 Every incident referenced (EchoLeak / CVE-2025-32711, ForcedLeak, the Salesloft Drift OAuth token theft, MCP Inspector RCE / CVE-2025-49596, CamoLeak, the November 2025 AI-orchestrated espionage disruption, and more) is a real, documented event with a primary-source citation.
 
 ## How it was built
 
-The research was produced by a multi-agent pipeline: parallel domain researchers enumerated attack vectors and candidate incidents, then every example was adversarially verified against its primary source before entering the dataset. The findings were clustered into a canonical taxonomy (42 risks after an adversarial-review expansion), mapped to an 11-layer reference architecture (grounded in Google SAIF, CSA MAESTRO, the OWASP Agentic Security Initiative, and cloud-vendor agent platforms), and each risk was mapped to its solution landscape with an explicit gap analysis.
+The research was produced by a multi-agent pipeline: parallel domain researchers enumerated attack vectors and candidate incidents, then every example was adversarially verified against its primary source before entering the dataset. The findings were clustered into a canonical taxonomy (50 risks after an adversarial-review expansion and a code-security pass that took it end-to-end), mapped to an 11-layer reference architecture (grounded in Google SAIF, CSA MAESTRO, the OWASP Agentic Security Initiative, and cloud-vendor agent platforms), and each risk was mapped to its solution landscape with an explicit gap analysis.
 
 The site is a dependency-free static build. All content is driven by `assets/data.json`; the interactive diagram, explorer, and mapping table are rendered client-side in vanilla JavaScript.
 
