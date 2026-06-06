@@ -1,4 +1,4 @@
-/* article reading layout for the two whitepaper parts */
+/* article reading layout for the two analysis parts */
 .article-hero { padding: 92px 0 26px; }
 .article-hero .partlabel { font-family: var(--font-mono); font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--cy); }
 .article-hero h1 { font-family: var(--font-display); font-weight:800; letter-spacing:-1.2px; font-size: clamp(34px,5vw,56px); line-height:1.02; margin:16px 0 14px; color:#f4f7fc; }
