@@ -1,3 +1,10 @@
 
 # Local-only runbook, never commit
 agent-context.md
+
+# Social drafts (LinkedIn/X), never publish to the code repo
+linkedin/
+*-Agentic-Risk.png
+LinkedIn-*
+draft.txt
+x_short.txt
