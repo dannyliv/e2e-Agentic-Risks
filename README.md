@@ -11,7 +11,7 @@ AI agents are not a new application bolted onto old infrastructure. They are a n
 - **An interactive threat map.** A clickable model of the eleven-layer enterprise agent deployment. Click any layer to see the surfaces it exposes, the validated incidents that hit it, the controls that help, and where coverage runs out.
 - **A risk taxonomy explorer.** All 50 canonical risks across 8 families, each mapped to the deployment layers it touches, the OWASP LLM and OWASP Agentic threat IDs, a validated real-world example, and an honest gap call. Filter by family, severity, or coverage.
 - **A risk-to-solution mapping.** Every risk against its strongest controls, with an explicit coverage gap for each.
-- **A two-part analysis** (read online, also in `/articles` as Word documents):
+- **A two-part analysis**, read online as HTML:
   - Part 1: how agents are deployed and where they get attacked.
   - Part 2: the taxonomy, the solution landscape, and the gaps.
 
@@ -41,7 +41,6 @@ part-2.html           analysis, Part 2
 assets/data.json      the full validated dataset (risks, examples, solutions, architecture)
 assets/app.js         client-side rendering
 assets/figures/       the four diagrams
-articles/             the two-part analysis as Word documents
 ```
 
 ## Author

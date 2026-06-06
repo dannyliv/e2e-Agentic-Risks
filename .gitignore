@@ -8,3 +8,8 @@ linkedin/
 LinkedIn-*
 draft.txt
 x_short.txt
+
+# No binary office docs in the code repo; HTML versions only
+*.docx
+*.doc
+articles/
