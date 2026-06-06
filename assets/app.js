@@ -233,7 +233,13 @@ function openLayer(id) {
   const body = $('#dbody'); body.innerHTML = '';
   if (ds.surfaces && ds.surfaces.length) {
     body.appendChild(secLabel('Attack surfaces'));
-    const wrap = el('div'); ds.surfaces.forEach(s => wrap.appendChild(el('span', { class: 'surf-tag' }, esc(s.label))));
+    const wrap = el('div');
+    ds.surfaces.forEach(s => {
+      const chip = el('button', { class: 'surf-tag surf-click', type: 'button', 'aria-label': 'Details: ' + s.label });
+      chip.innerHTML = esc(s.label) + ' <span class="surf-i" aria-hidden="true">i</span>';
+      chip.addEventListener('click', ev => { ev.stopPropagation(); openSurface(s, SHORT[id] || (a.name || '')); });
+      wrap.appendChild(chip);
+    });
     body.appendChild(wrap);
   }
   const rs = (RISKS_BY_LAYER[id] || []).slice().sort((x, y) => (sev_rank[y.severity] - sev_rank[x.severity]));
@@ -242,6 +248,38 @@ function openLayer(id) {
   openPanel();
 }
 function secLabel(t) { const h = el('h5', {}, esc(t)); h.style.cssText = 'font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px;font-size:11px;color:var(--cy);margin:20px 0 8px'; return h; }
+
+/* ---- attack-surface popover (tap-friendly, works on mobile) ---- */
+let surfMask, surfCard;
+function ensureSurfDom() {
+  if (surfMask) return;
+  surfMask = el('div', { class: 'surf-mask' });
+  surfCard = el('div', { class: 'surf-pop', role: 'dialog', 'aria-modal': 'true' });
+  surfMask.appendChild(surfCard);
+  document.body.appendChild(surfMask);
+  surfMask.addEventListener('click', e => { if (e.target === surfMask) closeSurface(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && surfMask.classList.contains('open')) { e.stopPropagation(); closeSurface(); } });
+}
+function closeSurface() { if (surfMask) surfMask.classList.remove('open'); }
+function openSurface(s, layerName) {
+  ensureSurfDom();
+  const rs = (s.risk_ids || []).map(id => RISK_BY_ID[id]).filter(Boolean).sort((x, y) => sev_rank[y.severity] - sev_rank[x.severity]);
+  let html = `<button class="surf-x" aria-label="Close">&times;</button>
+    <div class="surf-kicker">Attack surface &middot; ${esc(layerName)}</div>
+    <h4 class="surf-title">${esc(s.label)}</h4>
+    <p class="surf-desc">This is where the agent is exposed at this layer. It becomes exploitable through the ${rs.length} risk${rs.length === 1 ? '' : 's'} below. Open any one for its mechanism, a validated real-world example, and the controls that help.</p>`;
+  if (rs.length) html += '<div class="surf-risks">' + rs.map(r => `
+      <button class="surf-risk" data-r="${r.id}">
+        <span class="srtop"><span class="chip sev-${r.severity}">${r.severity}</span><span class="sr-id">${r.id}</span><span class="gap gap-${gapKey(r.gap_status)}">${esc(shortGap(r.gap_status))}</span></span>
+        <span class="sr-name">${esc(r.name)}</span>
+        <span class="sr-def">${esc(r.short_def)}</span>
+      </button>`).join('') + '</div>';
+  surfCard.innerHTML = html;
+  surfCard.querySelector('.surf-x').addEventListener('click', closeSurface);
+  surfCard.querySelectorAll('.surf-risk').forEach(b => b.addEventListener('click', () => { closeSurface(); openRisk(b.dataset.r); }));
+  surfCard.scrollTop = 0;
+  surfMask.classList.add('open');
+}
 function openRisk(rid) {
   const r = RISK_BY_ID[rid]; if (!r) return;
   $('#dlid').textContent = r.id + '  ·  ' + (r.family_name || '');
